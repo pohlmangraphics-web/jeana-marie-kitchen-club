@@ -1,82 +1,55 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
-# IDE and editors
-.idea/
-.vscode/
-
 # Dependencies
 node_modules/
-/node_modules
-/.pnp
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pnp
 .pnp.js
-.yarn/install-state.gz
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
-# Testing
-/coverage
+# Environment (secrets — NEVER commit)
+.env
+.env.*
+!.env.example
+backend/.env
+frontend/.env
 
-# Next.js
-/.next/
-/out/
-next-env.d.ts
-*.tsbuildinfo
+# Build outputs
+frontend/build/
+frontend/dist/
+backend/dist/
+*.egg-info/
+.eggs/
 
-# Production builds
-/build
-dist/
-dist
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
 
-# Environment files (comprehensive coverage)
-
-*token.json*
-*credentials.json*
-
-# Logs and debug files
+# Logs
+*.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
-dump.rdb
 
-# System files
-.DS_Store
-*.pem
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+test-reports/
+/app/test_reports/
 
-# Python
-__pycache__/
-*pyc*
-venv/
-.venv/
+# Emergent internal
+/app/memory/
+/app/scripts/
 
-# Development tools
-chainlit.md
-.chainlit
-.ipynb_checkpoints/
-.ac
-
-# Deployment
-.vercel
-
-# Data and databases
-agenthub/agents/youtube/db
-
-# Archive files and large assets
-**/*.zip
-**/*.tar.gz
-**/*.tar
-**/*.tgz
-*.pack
-*.deb
-*.dylib
-
-# Build caches
-.cache/
-
-memory/test_credentials.md
-
-# Mobile development
-android-sdk/
+# Generated PDFs / uploads (served from Object Storage)
+uploads/
+*.pdf.tmp
