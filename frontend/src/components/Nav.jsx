@@ -15,10 +15,10 @@ export default function Nav() {
     <header className="sticky top-0 z-40 glass border-b border-terracotta/10">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
         <Link to="/" data-testid="nav-home" className="flex items-center gap-3">
-          <Logo size={44} hasCustom={hasCustomLogo}/>
+          <Logo size={64} hasCustom={hasCustomLogo}/>
           <div className="leading-tight hidden sm:block">
-            <div className="script text-2xl text-terracotta -mb-1">Jeana Marie's</div>
-            <div className="serif text-sm text-espresso font-bold">Kitchen Club</div>
+            <div className="script text-3xl text-terracotta -mb-1">Jeana Marie's</div>
+            <div className="serif text-base text-espresso font-bold">Kitchen Club</div>
           </div>
         </Link>
         <nav className="flex items-center gap-3">

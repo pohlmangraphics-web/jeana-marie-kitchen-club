@@ -42,11 +42,10 @@ export default function Landing() {
               and printable homeschool activities across four age tiers — so every child (and grown-up) gets a page of their own.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link data-testid="hero-cta-join" to="/auth?mode=register" className="btn-pill btn-primary">Start Your Family's Journal</Link>
-              <a data-testid="hero-cta-samples" href="#samples" className="btn-pill btn-outline">Taste 3 Free Recipes</a>
+              <Link data-testid="hero-cta-join" to="/auth?mode=register" className="btn-pill btn-primary">Join the Kitchen Club</Link>
+              <a data-testid="hero-cta-samples" href="#samples" className="btn-pill btn-outline">Get 3 Free Recipes</a>
             </div>
             <div className="mt-10 flex items-center gap-8 text-sm text-muted2">
-              <div className="flex items-center gap-2"><Users className="w-4 h-4 text-sage"/> 6 profiles per family</div>
               <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-sage"/> New recipes weekly</div>
               <div className="flex items-center gap-2"><Printer className="w-4 h-4 text-sage"/> Printable worksheets</div>
             </div>
@@ -71,7 +70,7 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="max-w-2xl">
           <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Four Books, One Club</p>
-          <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">Every kid gets a page written for them.</h2>
+          <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">A kitchen curriculum that grows with your family.</h2>
           <p className="mt-4 text-muted2">Age-tiered content updated every single week. Parent controls which book each profile can open.</p>
         </div>
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
