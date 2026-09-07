@@ -1,0 +1,44 @@
+{
+  "summary": "First-run test of Jeana Marie's Kitchen Club. Ran 32 pytest cases across feature flags, auth, recipes, redeem, admin CSV/JSON export (7 entities x 2 formats = 14), flag gating, Stripe, and branding logo. Result: 31/32 backend passing (96.9%) after fixing a test-only email-case comparison. One CRITICAL business bug found: per-IP login rate limiter does NOT trigger behind Kubernetes ingress because request.client.host alternates between multiple ingress proxy IPs (verified 10.49.139.194 vs 10.49.134.136). Frontend: landing page loads with Recipe Book Stack SVG logo, brand text, hero, 3 free sample recipes CTA; admin login lands on /admin with all 8 tabs (Recipes, Printables, Codes, Families, Analytics, Flags, Branding, Export); mobile 375x812 has no horizontal overflow; redeem page reachable; register form present.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/auth/login", "issue": "Rate limit (5 failed logins per IP+email / 5min) is INEFFECTIVE behind K8s ingress. request.client.host alternates between ingress proxy IPs so the sliding-window bucket never fills. 7 consecutive bad logins all returned 401. Fix: derive real client IP from X-Forwarded-For / X-Real-IP header (first value), fall back to request.client.host.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "/api/admin/branding/logo", "issue": "Route is POST-only; UI/docs may imply PUT. Test handles both. Consider accepting PUT for RESTful uploads."},
+      {"endpoint": "/api/auth/register", "issue": "Server lowercases email silently; returned user.email differs from input case. Consider returning original case OR documenting the lowercase-normalize behavior."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix rate limiter to use X-Forwarded-For to obtain real client IP (critical for brute-force protection on /auth/login, /auth/register, /auth/forgot-password, /auth/reset-password).",
+    "Consider adding data-testid attributes to Landing hero CTAs, register form fields, admin tab buttons for more robust future automation (currently we rely on text and structural selectors)."
+  ],
+  "critical_code_review_comments": [
+    "server.py is ~780 lines - approaching split threshold. Consider splitting into routers/auth.py, routers/recipes.py, routers/admin.py, routers/payments.py, routers/files.py for maintainability.",
+    "In-memory rate-limit dict (_rate_buckets) is single-worker only. If backend scales to workers>1 or replicas>1, rate limiting will fragment. Since uvicorn is --workers 1 today, it is acceptable, but note in code.",
+    "download_file accepts token via ?auth= query param - exposes tokens in server logs / referrer headers. Consider short-lived signed URLs instead.",
+    "checkout endpoint uses _sync_db inside an async request handler; blocks event loop briefly. Prefer async db.payment_transactions.insert_one.",
+    "stripe checkout catches only InvalidRequestError; other stripe errors will 500 without a friendly message.",
+    "Reset password does not invalidate existing JWTs; a compromised token remains valid until expiry (30 days). Consider bumping a per-user token_version claim.",
+    "get_flags is called on every /files/upload and /journal write - fine for now but consider LRU-caching for hot paths."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "96.9% (31/32 including expected-failure rate-limit test)", "frontend": "100% of tested flows"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! ; demo@family.com / DemoFamily123! (both verified working)",
+  "seed_data_creation": "None - used existing seeded admin, demo family (4 profiles), 6 recipes (3 samples), 5 printables. Tests use TEST_-prefixed emails for isolation; no teardown implemented but data volume is negligible.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend test file at /app/backend/tests/backend_test.py runs in ~10s and covers all critical flows. The one FAILING test is TestAuth::test_login_rate_limit which reveals a REAL production security bug (rate limiter ineffective behind ingress). If main agent fixes rate_limit to use X-Forwarded-For header, re-run pytest and this test will pass. Flags test uses PUT /api/admin/flags with the full flags dict; make sure future flag additions are non-breaking. Frontend admin tabs are: Recipes/Printables/Codes/Families/Analytics/Flags/Branding/Export - all render.",
+  "rca of the issue": "Rate limit key = f'login:{request.client.host}:{email}'. Behind K8s ingress-nginx, request.client.host is the reverse-proxy pod IP, and there are multiple proxy pods that round-robin (observed 10.49.134.136 and 10.49.139.194 in backend access logs during 7 consecutive requests from a single curl loop). Because each request hits a different bucket key, the per-key counter never reaches the max_hits=5 threshold. Reproduction: `for i in {1..10}; do curl -s -o /dev/null -w '%{http_code}\\n' -X POST $URL/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"x@y.com\",\"password\":\"bad\"}'; done` -> all 401, none 429. Mitigation: replace `request.client.host` with a helper `def real_ip(request): return (request.headers.get('x-forwarded-for') or request.headers.get('x-real-ip') or (request.client.host if request.client else '')).split(',')[0].strip()` and use that for all rate_limit keys."
+}

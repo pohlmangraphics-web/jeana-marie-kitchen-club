@@ -1,0 +1,136 @@
+{
+  "theme": "light",
+  "typography": {
+    "fonts": [
+      {
+        "role": "brand_script",
+        "family": "Dancing Script",
+        "usage": "Brand name 'Jeana Marie's', signatures, playful accents",
+        "weights": ["400", "700"]
+      },
+      {
+        "role": "headings_serif",
+        "family": "Merriweather",
+        "usage": "Main headings 'Kitchen Club', editorial cookbook feel",
+        "weights": ["400", "700", "900"]
+      },
+      {
+        "role": "body_sans",
+        "family": "Nunito",
+        "usage": "Supporting copy, UI text, kids profiles (friendly rounded sans)",
+        "weights": ["400", "500", "600", "700"]
+      }
+    ],
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm uppercase tracking-[0.2em]"
+    }
+  },
+  "colors": {
+    "palette_name": "Warm Editorial Cookbook",
+    "base": {
+      "cream": "#FDFBF7",
+      "ivory": "#F4F1EA"
+    },
+    "text": {
+      "espresso": "#2C1E16",
+      "muted": "#5C4A3D"
+    },
+    "accents": {
+      "terracotta": "#E07A5F",
+      "honey_mustard": "#F2CC8F",
+      "soft_sage": "#81B29A"
+    },
+    "rules": [
+      "Use Cream/Ivory for backgrounds (never pure white unless for specific card contrast).",
+      "Deep Espresso for all primary text for high contrast readability.",
+      "Terracotta for primary CTAs and active states.",
+      "Honey Mustard for playful accents and kids' profile highlights.",
+      "Soft Sage for success states and natural, earthy touches."
+    ]
+  },
+  "visual_enhancers": {
+    "surfaces": [
+      "Adult UI: Organic & Earthy archetype. Flat backgrounds, subtle borders, soft diffuse shadows. Use 'Clay & Crisp' neomorphism for interactive elements.",
+      "Kids UI: Playful bright theme. High contrast, rounded elements, 'Pastel & Soft' archetype with neo-brutalist contrast (soft colors + solid borders).",
+      "Journal Editor: Styled like a real notebook with lined backgrounds, handwritten script accents, and paper textures."
+    ],
+    "borders_and_radius": [
+      "Adult: Subtly rounded corners (md to lg).",
+      "Kids: Fully rounded, pill shapes, playful thick borders (2px to 4px)."
+    ],
+    "textures": [
+      "Use subtle paper/grain texture for adult cookbook pages.",
+      "Use lined notebook patterns for the journal sections."
+    ]
+  },
+  "layouts_and_grids": {
+    "spacing": "Generous spacing. Use p-8, p-12 for sections. Mobile-first constraints.",
+    "bento_grid": "Use Mode A (Tetris) for the landing page storytelling, Mode B for the admin dashboard.",
+    "kitchen_mode": "Dedicated layout for kitchen mode: Large touch targets, simplified navigation, text-2xl/3xl for recipe steps, high contrast, sticky controls to prevent dirty screen touches."
+  },
+  "components": {
+    "buttons": "Pill-shaped for kids, slightly rounded rectangular for adults. Distinct hover states.",
+    "cards": "Cardless or subtle borders for adult recipes. Playful, elevated cards for kid content.",
+    "forms": "Use Shadcn customized. No native inputs.",
+    "navigation": "Sticky glassmorphism header for adult UI. Simplified icon-heavy bottom nav for kids."
+  },
+  "motion": {
+    "rules": [
+      "Smooth entrance animations for recipes.",
+      "Playful bounce for kid UI interactions.",
+      "Micro-interactions on hover and click."
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure Espresso text on Cream meets WCAG AA.",
+    "kitchen_mode": "Ensure massive touch targets (min 60x60px) and voice/audio cues if possible for hands-free or messy hands.",
+    "testing": "All interactive elements must have data-testid attributes."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.unsplash.com/photo-1605433246995-23f532d1e001?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwyfHxraWRzJTIwY29va2luZyUyMGtpdGNoZW58ZW58MHx8fHwxNzg4NzU0NTc3fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Kids cooking together, great for landing page family connection section.",
+        "category": "landing_hero"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1713942589752-6c6bb58ca8b6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwzfHxraWRzJTIwY29va2luZyUyMGtpdGNoZW58ZW58MHx8fHwxNzg4NzU0NTc3fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Mother and child baking, ideal for 'Mom & Dad Quick & Easy' or community section.",
+        "category": "feature_section"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1654542645844-590f5b8c146a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHxyZWNpcGUlMjBqb3VybmFsJTIwYmxhbmslMjBwYWdlc3xlbnwwfHx8fDE3ODg3NTQ1Nzd8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Open blank notebook, use as background or reference for the Journal Editor.",
+        "category": "journal_background"
+      }
+    ],
+    "icons": {
+      "libraries_to_install": [
+        "yarn add lucide-react",
+        "yarn add iconoir-react"
+      ],
+      "usage": "lucide-react (default) for adult UI, iconoir-react for kid-friendly playful icons."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Use Tailwind for custom layouts on the landing page, and heavily customized Shadcn for the dashboard/app.",
+    "Implement the 'Kitchen Mode' toggle which increases all text sizes, simplifies UI, and removes distractions.",
+    "The kids profiles must use the 'Pastel & Soft' archetype with heavy borders and Honey Mustard accents.",
+    "Do not use generic font Inter. Use Dancing Script, Merriweather, and Nunito.",
+    "Use JS files instead of TSX for this project since we are using regular JS."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "Never apply universal transitions (transition: all). Use specific transitions.",
+    "Do not center align the app container. Text should flow naturally left-to-right.",
+    "Always use modern button styles like pill-shaped.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "All interactive elements MUST have data-testid attributes."
+  ]
+}

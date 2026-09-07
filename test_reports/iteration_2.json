@@ -1,0 +1,30 @@
+{
+  "summary": "Backend retest after real_ip() fix. Ran full pytest suite (36 tests) with 4 new rate-limit tests covering all four auth endpoints and a dedicated real_ip XFF first-value parsing test. Result: 36/36 PASSING (100%). Previously-failing test_login_rate_limit now correctly observes 5x 401 followed by 429 on the 6th attempt. Added tests confirm /auth/register (10/hr), /auth/forgot-password (5/hr), /auth/reset-password (10/hr) all hit 429 after their limits. The new test_real_ip_helper_parses_xff_first_value proves buckets are keyed on the FIRST comma-separated value of X-Forwarded-For (burst A on IP-A triggers 429; burst B on IP-B still returns clean 401s, so buckets are correctly isolated).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/auth/register", "issue": "Server silently lowercases email; response returns lowercased form. Consider documenting."},
+      {"endpoint": "/api/admin/branding/logo", "issue": "POST-only; RESTful PUT would be nicer for updates."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "real_ip() is correct but trusts X-Forwarded-For unconditionally. In this deployment K8s ingress is the only path in, so it's fine; but if the backend is ever exposed directly, an attacker could spoof XFF to bypass rate limiting. Consider validating that the request came through the trusted proxy (e.g., check request.client.host is in an allowed range) before honoring XFF.",
+    "server.py still ~790 lines - consider splitting into routers/ subpackage for maintainability.",
+    "_rate_buckets dict grows unbounded (one key per IP+email). Add periodic pruning or use TTL cache to avoid slow memory growth on long-running processes.",
+    "Reset password still does not invalidate existing JWTs (carry-over comment from iteration_1)."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (36/36)", "frontend": "not retested (unchanged per request)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! ; demo@family.com / DemoFamily123! (both verified)",
+  "seed_data_creation": "Test-created users use TEST_ prefixed emails; no cleanup implemented but volume negligible.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Rate-limit fix verified end-to-end via public URL. New tests use forged X-Forwarded-For with unique first-value IPs per test to isolate buckets. If tests are re-run within the same hour, register/forgot/reset buckets remain isolated because each test picks a fresh random IP. Full suite runs ~16s under pytest-xdist (2 workers). All previous 32 tests still pass; 4 net-new tests added (register RL, forgot RL, reset RL, XFF first-value parsing).",
+  "rca of the issue": "FIXED. Root cause was request.client.host returning rotating K8s ingress proxy IPs. Fix in server.py real_ip() reads X-Forwarded-For first value, then X-Real-IP, then falls back to request.client.host. All four auth endpoints now key buckets on real_ip(request). Verified via pytest: 5x 401 then 429 on 6th attempt for login; 429 observed for register (>10), forgot (>5), reset (>10) within their windows; two bursts with different XFF first-values do not share a bucket."
+}

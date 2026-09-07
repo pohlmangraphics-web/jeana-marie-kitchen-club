@@ -1,0 +1,116 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&family=Nunito:wght@400;500;600;700;800&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --background: 40 42% 98%;
+    --foreground: 25 34% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 25 34% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 34% 13%;
+    --primary: 14 66% 63%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 40 30% 92%;
+    --secondary-foreground: 25 34% 13%;
+    --muted: 40 30% 92%;
+    --muted-foreground: 25 20% 40%;
+    --accent: 152 25% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 82%;
+    --input: 30 15% 82%;
+    --ring: 14 66% 63%;
+    --radius: 0.75rem;
+}
+
+body {
+    margin: 0;
+    font-family: 'Nunito', system-ui, sans-serif;
+    background-color: #FDFBF7;
+    color: #2C1E16;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Paper texture for editorial feel */
+.paper-tex {
+    background-image:
+        radial-gradient(circle at 25% 25%, rgba(224,122,95,0.04) 0%, transparent 40%),
+        radial-gradient(circle at 75% 75%, rgba(129,178,154,0.04) 0%, transparent 40%);
+}
+
+/* Notebook lined background for journal */
+.notebook {
+    background-color: #FDFBF7;
+    background-image:
+        linear-gradient(to right, rgba(224,122,95,0.4) 1px, transparent 1px),
+        repeating-linear-gradient(to bottom, transparent, transparent 31px, rgba(92,74,61,0.25) 31px, rgba(92,74,61,0.25) 32px);
+    background-position: 40px 0, 0 0;
+    background-size: 100% 32px;
+    padding-left: 60px;
+}
+
+/* Kid theme: bold pastel */
+.kid-theme {
+    background: #FFFAE8;
+}
+.kid-theme button, .kid-theme .kid-btn {
+    border: 3px solid #2C1E16;
+    border-radius: 999px;
+    background: #F2CC8F;
+    color: #2C1E16;
+    font-weight: 700;
+}
+
+/* Kitchen mode: huge text & sticky */
+.kitchen-mode {
+    font-size: 1.375rem;
+    line-height: 1.7;
+}
+.kitchen-mode h1 { font-size: 2.75rem; }
+.kitchen-mode h2 { font-size: 2rem; }
+.kitchen-mode .step { font-size: 1.5rem; padding: 1.25rem; }
+
+.glass {
+    background: rgba(253, 251, 247, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.script { font-family: 'Dancing Script', cursive; }
+.serif { font-family: 'Merriweather', Georgia, serif; }
+
+.btn-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 999px;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.btn-pill:hover { transform: translateY(-2px); box-shadow: 0 8px 20px -8px rgba(224,122,95,0.5); }
+.btn-primary { background: #E07A5F; color: white; }
+.btn-primary:hover { background: #C55A3F; }
+.btn-outline { background: transparent; color: #2C1E16; border: 2px solid #2C1E16; }
+.btn-honey { background: #F2CC8F; color: #2C1E16; }
+
+.card-warm {
+    background: white;
+    border: 1px solid rgba(224,122,95,0.15);
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px -6px rgba(44,30,22,0.08);
+}
+
+/* Hide scrollbar on horizontal */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@layer base {
+    * {
+        border-color: hsl(var(--border));
+    }
+}
