@@ -18,6 +18,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import FAQ from "./pages/FAQ";
 import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import GiftPage from "./pages/Gift";
 
 function Protected({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -41,6 +43,8 @@ function App() {
             <Route path="/reset" element={<ResetPassword/>}/>
             <Route path="/faq" element={<FAQ/>}/>
             <Route path="/terms" element={<Terms/>}/>
+            <Route path="/privacy" element={<Privacy/>}/>
+            <Route path="/gift" element={<GiftPage/>}/>
             <Route path="/payment/success" element={<PaymentSuccess/>}/>
             <Route path="/payment/cancel" element={<PaymentCancel/>}/>
             <Route path="/app" element={<Protected><Dashboard/></Protected>}/>

@@ -1,0 +1,19 @@
+{
+  "summary": "Iteration 6 review — added /privacy (COPPA-aware) page, /gift printable-cert page, POST /api/gift-certificate/pdf endpoint, and footer/landing links. Backend: 10/10 pytest cases pass in new /app/backend/tests/test_gift_certificate.py — regression spot-checks (GET /api/, admin login, /api/recipes/samples returns 3 items, /api/flags) all 200; POST /api/gift-certificate/pdf returns 200 + application/pdf content-type + body >1KB for all 4 durations (monthly/3month/6month/annual); missing 'to' → 422; missing 'code' → 422; endpoint is public (no Authorization header needed); JSON body key literal 'from' (Pydantic alias) works — request from frontend that sends form.from succeeds. Note: due to model_config populate_by_name=True, the model ALSO accepts the field key 'from_' as an alternate — not user-facing (frontend sends 'from'). Frontend: /privacy loads with h1='Privacy Policy', contains all required sections ('Children Under 13 (COPPA)', 'No independent child accounts', 'Photo uploads are opt-in and off by default', 'We do not sell your data'), footer disclaimer visible. /gift loads with h1='A gift that nourishes.', all 4 pricing tier cards (gift-tier-monthly/3month/6month/annual) visible, certificate preview mock present ('This certificate entitles'), gift-etsy-link href='https://www.etsy.com/'. Gift form: empty-fields submit → Sonner toast 'Please fill in Recipient, From, and Code' shown, no download triggered (correct). Filled form (to=The Bakers, from=Grandma, code=JMK-ABCD123456, duration=annual) → PDF download triggered, file 'KitchenClub_Gift_The_Bakers.pdf'. Footer links (footer-privacy, footer-gift) visible on landing, /faq, /terms, /privacy, /gift. Landing pricing gift-cta-link visible with href='/gift'. Regression: 'Join the Kitchen Club', 'Get 3 Free Recipes', tagline 'Cooking and learning activities for homeschool families' all still present on Landing. Word 'students' absent on both /privacy and /gift. Mobile 375x812: both /privacy and /gift have no horizontal overflow (scrollWidth==clientWidth==375). All 15 review bullet checks pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_gift_certificate.py", "/app/test_reports/pytest/iter6_gift.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GiftCertReq uses model_config={'populate_by_name': True}, which means both JSON keys 'from' AND 'from_' are accepted. Frontend only sends 'from' so no user impact, but if strict alias-only intake is desired, remove populate_by_name.",
+    "Gift PDF endpoint has no rate limiting — it's public and generates a PDF each call. Consider a small per-IP limit to prevent abuse."
+  ],
+  "updated_files": ["/app/backend/tests/test_gift_certificate.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% (all 15 review checks)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iteration 6 is clean. New endpoint POST /api/gift-certificate/pdf is public by design (buyer already owns the code). Pytest run requires REACT_APP_BACKEND_URL to be exported into env (pytest.ini does not autoload frontend/.env). Existing full backend_test.py suite was NOT re-run to avoid uploading a logo file (per prev iter5 guidance).",
+  "rca of the issue": "n/a — no bugs found"
+}

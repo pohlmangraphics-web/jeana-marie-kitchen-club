@@ -149,7 +149,7 @@ export default function Landing() {
               </div>
             ))}
           </div>
-          <p className="text-center mt-10 text-cream/60 text-sm">Bought on Etsy? <Link data-testid="etsy-redeem-link" to="/redeem" className="underline text-honey">Redeem your code here</Link>.</p>
+          <p className="text-center mt-10 text-cream/60 text-sm">Bought on Etsy? <Link data-testid="etsy-redeem-link" to="/redeem" className="underline text-honey">Redeem your code here</Link>. Want to <Link data-testid="gift-cta-link" to="/gift" className="underline text-honey">gift a membership</Link>?</p>
         </div>
       </section>
 

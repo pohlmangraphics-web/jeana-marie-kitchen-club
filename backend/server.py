@@ -193,6 +193,13 @@ class MealCostingCreate(BaseModel):
     meal_name: str; servings: int = 4; items: List[Dict[str, Any]]
 class RedeemReq(BaseModel):
     code: str
+class GiftCertReq(BaseModel):
+    to: str = Field(min_length=1, max_length=80)
+    from_: str = Field(min_length=1, max_length=80, alias="from")
+    code: str = Field(min_length=1, max_length=40)
+    duration: Literal["monthly", "3month", "6month", "annual"] = "annual"
+    message: Optional[str] = Field(default=None, max_length=280)
+    model_config = {"populate_by_name": True}
 class GenerateCodesReq(BaseModel):
     duration: Literal["monthly", "3month", "6month", "annual"]; count: int = 1; note: Optional[str] = None
 class CheckoutReq(BaseModel):
@@ -563,6 +570,114 @@ async def printable_pdf(pid: str, user=Depends(get_current_user)):
     out = bytes(pdf.output(dest="S"))
     return Response(content=out, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{p["title"].replace(" ","_")}.pdf"'})
+
+# --- Gift Certificate (public - no auth) ---
+DURATION_LABEL = {"monthly": "1 Month", "3month": "3 Months", "6month": "6 Months", "annual": "1 Full Year"}
+
+@api.post("/gift-certificate/pdf")
+async def gift_certificate_pdf(body: GiftCertReq, request: Request):
+    """Generate a printable gift certificate PDF. No auth: the certificate is just paper.
+    We never validate the code here - it's a decorative wrapper for a code you already own."""
+    rate_limit(f"giftpdf:{real_ip(request)}", 20, 3600)
+    pdf = FPDF(format="Letter")
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    # Warm background box
+    pdf.set_fill_color(253, 251, 247)
+    pdf.rect(10, 10, 195.6, 259, style="F")
+
+    # Double border in terracotta
+    pdf.set_draw_color(224, 122, 95)
+    pdf.set_line_width(1.2); pdf.rect(15, 15, 185.6, 249)
+    pdf.set_line_width(0.4); pdf.rect(19, 19, 177.6, 241)
+
+    # Corner ornaments (sage)
+    pdf.set_fill_color(129, 178, 154)
+    for cx, cy in [(24, 24), (198, 24), (24, 258), (198, 258)]:
+        pdf.ellipse(cx - 2, cy - 2, 4, 4, style="F")
+
+    # Logo mark (mini) top-center
+    center = 108
+    pdf.set_fill_color(129, 178, 154); pdf.set_draw_color(44, 30, 22); pdf.set_line_width(0.3)
+    pdf.rect(center - 12, 40, 24, 5, style="FD")
+    pdf.set_fill_color(242, 204, 143)
+    pdf.rect(center - 10, 35, 20, 5, style="FD")
+    pdf.set_fill_color(224, 122, 95)
+    pdf.rect(center - 8, 30, 16, 5, style="FD")
+    pdf.set_fill_color(253, 251, 247)
+    pdf.ellipse(center - 5, 22, 10, 6, style="FD")
+
+    # Brand block
+    pdf.set_y(55)
+    pdf.set_font("Helvetica", "I", 22); pdf.set_text_color(224, 122, 95)
+    pdf.cell(0, 10, safe_txt("Jeana Marie's"), ln=True, align="C")
+    pdf.set_font("Helvetica", "B", 30); pdf.set_text_color(44, 30, 22)
+    pdf.cell(0, 12, safe_txt("Kitchen Club"), ln=True, align="C")
+    pdf.set_font("Helvetica", "", 11); pdf.set_text_color(92, 74, 61)
+    pdf.cell(0, 6, safe_txt("Cooking and learning activities for homeschool families"), ln=True, align="C")
+
+    # Certificate title
+    pdf.ln(14)
+    pdf.set_font("Helvetica", "B", 14); pdf.set_text_color(129, 178, 154)
+    pdf.cell(0, 6, safe_txt("~ GIFT CERTIFICATE ~"), ln=True, align="C")
+
+    # Recipient
+    pdf.ln(12)
+    pdf.set_font("Helvetica", "", 11); pdf.set_text_color(92, 74, 61)
+    pdf.cell(0, 5, safe_txt("This certificate is presented to"), ln=True, align="C")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 26); pdf.set_text_color(44, 30, 22)
+    pdf.cell(0, 12, safe_txt(body.to), ln=True, align="C")
+
+    # Divider
+    pdf.set_draw_color(224, 122, 95); pdf.set_line_width(0.4)
+    pdf.line(80, pdf.get_y() + 4, 130, pdf.get_y() + 4)
+
+    # Duration
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "", 11); pdf.set_text_color(92, 74, 61)
+    pdf.cell(0, 5, safe_txt("For a family membership of"), ln=True, align="C")
+    pdf.ln(2)
+    pdf.set_font("Helvetica", "B", 24); pdf.set_text_color(224, 122, 95)
+    pdf.cell(0, 12, safe_txt(DURATION_LABEL.get(body.duration, body.duration)), ln=True, align="C")
+
+    # Message (optional)
+    if body.message:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "I", 12); pdf.set_text_color(44, 30, 22)
+        pdf.multi_cell(0, 6, safe_txt(f'"{body.message}"'), align="C")
+
+    # Redeem code box
+    pdf.ln(10)
+    pdf.set_fill_color(244, 241, 234)
+    pdf.rect(50, pdf.get_y(), 110, 22, style="F")
+    y0 = pdf.get_y()
+    pdf.set_font("Helvetica", "", 9); pdf.set_text_color(92, 74, 61)
+    pdf.set_y(y0 + 3)
+    pdf.cell(0, 5, safe_txt("REDEEM AT jeanamarie.club/redeem"), ln=True, align="C")
+    pdf.set_font("Courier", "B", 20); pdf.set_text_color(44, 30, 22)
+    pdf.cell(0, 10, safe_txt(body.code.upper()), ln=True, align="C")
+
+    # From / signature
+    pdf.ln(18)
+    pdf.set_font("Helvetica", "", 11); pdf.set_text_color(92, 74, 61)
+    pdf.cell(0, 5, safe_txt("With love from"), ln=True, align="C")
+    pdf.set_font("Helvetica", "I", 20); pdf.set_text_color(224, 122, 95)
+    pdf.cell(0, 12, safe_txt(body.from_), ln=True, align="C")
+
+    # Footer note
+    pdf.set_y(-25)
+    pdf.set_font("Helvetica", "", 7); pdf.set_text_color(129, 178, 154)
+    pdf.multi_cell(0, 3, safe_txt(
+        "Jeana Marie's Kitchen Club provides family cooking activities and supplemental educational enrichment. "
+        "It is not a school, accredited educational program or provider of academic credit."
+    ), align="C")
+
+    out = bytes(pdf.output(dest="S"))
+    filename = f"KitchenClub_Gift_{body.to.replace(' ', '_')}.pdf"
+    return Response(content=out, media_type="application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 # --- Redeem Codes ---
 @api.post("/redeem")

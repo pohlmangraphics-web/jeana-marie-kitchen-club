@@ -16,6 +16,8 @@ export default function Footer() {
           <ul className="mt-3 space-y-2">
             <li><Link to="/faq" data-testid="footer-faq" className="hover:text-terracotta">FAQ</Link></li>
             <li><Link to="/terms" data-testid="footer-terms" className="hover:text-terracotta">Terms</Link></li>
+            <li><Link to="/privacy" data-testid="footer-privacy" className="hover:text-terracotta">Privacy</Link></li>
+            <li><Link to="/gift" data-testid="footer-gift" className="hover:text-terracotta">Gift a Membership</Link></li>
             <li><Link to="/redeem" className="hover:text-terracotta">Redeem a code</Link></li>
           </ul>
         </div>
