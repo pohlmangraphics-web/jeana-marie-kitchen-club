@@ -1,4 +1,4 @@
-# Jeana Marie's Kitchen Club for Homeschoolers
+# Jeana Marie's Kitchen Club
 
 A membership web app where Chef Jeana Marie delivers weekly recipes and homeschool-ready kitchen activities across four age tiers. Families cook, learn, and build a personalized journal cookbook together.
 
