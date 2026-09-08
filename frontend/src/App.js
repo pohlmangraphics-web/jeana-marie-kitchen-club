@@ -16,6 +16,8 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancel from "./pages/PaymentCancel";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import FAQ from "./pages/FAQ";
+import Terms from "./pages/Terms";
 
 function Protected({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -37,6 +39,8 @@ function App() {
             <Route path="/redeem" element={<Redeem/>}/>
             <Route path="/forgot" element={<ForgotPassword/>}/>
             <Route path="/reset" element={<ResetPassword/>}/>
+            <Route path="/faq" element={<FAQ/>}/>
+            <Route path="/terms" element={<Terms/>}/>
             <Route path="/payment/success" element={<PaymentSuccess/>}/>
             <Route path="/payment/cancel" element={<PaymentCancel/>}/>
             <Route path="/app" element={<Protected><Dashboard/></Protected>}/>

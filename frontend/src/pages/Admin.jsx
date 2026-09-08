@@ -74,7 +74,7 @@ function RecipesAdmin() {
         </div>
         <input placeholder="Photo URL" value={f.photo_url} onChange={(e) => setF({...f, photo_url: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <input placeholder="Homeschool topic" value={f.homeschool_topic} onChange={(e) => setF({...f, homeschool_topic: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
-        <textarea placeholder="Lesson plan" value={f.lesson_plan} onChange={(e) => setF({...f, lesson_plan: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+        <textarea placeholder="Family learning guide" value={f.lesson_plan} onChange={(e) => setF({...f, lesson_plan: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={f.is_sample} onChange={(e) => setF({...f, is_sample: e.target.checked})}/> Free sample</label>
         <button data-testid="admin-recipe-publish" className="btn-pill btn-primary">Publish</button>
       </form>

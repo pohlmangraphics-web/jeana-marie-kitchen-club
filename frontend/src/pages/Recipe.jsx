@@ -88,7 +88,7 @@ export default function Recipe() {
 
         {r.lesson_plan && (
           <div className="mt-10 rounded-2xl bg-sage/10 border-l-4 border-sage p-6">
-            <p className="text-xs uppercase tracking-widest text-sage font-bold">Homeschool Lesson</p>
+            <p className="text-xs uppercase tracking-widest text-sage font-bold">Family Learning Guide</p>
             <h3 className="serif text-xl font-bold text-espresso mt-1">{r.homeschool_topic}</h3>
             <p className="mt-2 text-muted2">{r.lesson_plan}</p>
           </div>

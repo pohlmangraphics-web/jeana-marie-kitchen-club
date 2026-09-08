@@ -147,8 +147,8 @@ PRINTABLES = [
     {"id": uid(), "title": "Meal Costing Worksheet", "tier": "teen", "kind": "meal_costing",
      "description": "Enter store prices and calculate cost per serving.",
      "content": "", "created_at": now_iso()},
-    {"id": uid(), "title": "Weekly Lesson Plan - Fractions in the Kitchen", "tier": "junior", "kind": "lesson_plan",
-     "description": "One-page lesson plan tying this week's muffin recipe to fractions.",
+    {"id": uid(), "title": "Weekly Family Learning Guide - Fractions in the Kitchen", "tier": "junior", "kind": "lesson_plan",
+     "description": "One-page family learning guide tying this week's muffin recipe to fractions.",
      "content": "Objective: Recognize 1/4, 1/2, 3/4 cup measurements.\n\nActivity: While measuring, pause and ask the child to identify each fraction.\n\nExtension: Combine 1/4 + 1/4 = 1/2. Prove it in the measuring cup!",
      "created_at": now_iso()},
 ]

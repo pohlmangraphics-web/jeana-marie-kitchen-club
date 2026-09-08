@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Nav from "../components/Nav";
+import Footer from "../components/Footer";
 import Logo from "../components/Logo";
 import { api } from "../lib/api";
 import { useFlags } from "../lib/flags";
@@ -32,14 +33,14 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 pt-16 pb-24 grid lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 animate-fade-up">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sage/15 text-sage text-xs uppercase tracking-[0.2em] font-bold">
-              <Sparkles className="w-3 h-3"/> A Homeschool Kitchen Membership
+              <Sparkles className="w-3 h-3"/> A Family Kitchen Learning Membership
             </div>
             <h1 className="mt-6 serif text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] text-espresso">
               Cook, learn, and <span className="script text-terracotta font-normal text-6xl sm:text-7xl lg:text-8xl">savor</span> together.
             </h1>
+            <p className="mt-2 script text-2xl text-terracotta">Cooking and learning activities for homeschool families</p>
             <p className="mt-6 text-lg text-muted2 max-w-xl leading-relaxed">
-              Chef Jeana Marie has 30+ years of family kitchens under her apron. Every week she publishes new recipes
-              and printable homeschool activities across four age tiers — so every child (and grown-up) gets a page of their own.
+              Chef Jeana Marie brings more than 30 years of professional cooking experience to your family's kitchen. Every week, members receive age-appropriate recipes, printable learning activities and practical kitchen lessons that help children build confidence and lifelong skills.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link data-testid="hero-cta-join" to="/auth?mode=register" className="btn-pill btn-primary">Join the Kitchen Club</Link>
@@ -70,8 +71,8 @@ export default function Landing() {
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="max-w-2xl">
           <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Four Books, One Club</p>
-          <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">A kitchen curriculum that grows with your family.</h2>
-          <p className="mt-4 text-muted2">Age-tiered content updated every single week. Parent controls which book each profile can open.</p>
+          <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">A kitchen learning experience that grows with your family.</h2>
+          <p className="mt-4 text-muted2">Age-tiered content updated every week. Parents choose which book each family member can open.</p>
         </div>
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {TIERS.map((t) => (
@@ -117,12 +118,12 @@ export default function Landing() {
           <img src="https://images.unsplash.com/photo-1713942589752-6c6bb58ca8b6?w=900" alt="Homeschool cooking" className="rounded-3xl shadow-xl -rotate-1"/>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">The Homeschool Layer</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Supplemental Homeschool Enrichment</p>
           <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">Printable worksheets that actually teach.</h2>
           <ul className="mt-6 space-y-4">
             <li className="flex gap-4"><Printer className="w-6 h-6 text-terracotta shrink-0 mt-1"/><div><p className="font-bold text-espresso">Coloring pages & food-ID sheets</p><p className="text-sm text-muted2">For Little Chefs learning kitchen tools and food groups.</p></div></li>
             <li className="flex gap-4"><BookOpen className="w-6 h-6 text-terracotta shrink-0 mt-1"/><div><p className="font-bold text-espresso">Meal costing worksheets</p><p className="text-sm text-muted2">Teen Kitchen: real prices, real math, per-serving calculations.</p></div></li>
-            <li className="flex gap-4"><Sparkles className="w-6 h-6 text-terracotta shrink-0 mt-1"/><div><p className="font-bold text-espresso">Weekly lesson plans</p><p className="text-sm text-muted2">Every recipe ties to a homeschool topic — fractions, nutrition, cultural background.</p></div></li>
+            <li className="flex gap-4"><Sparkles className="w-6 h-6 text-terracotta shrink-0 mt-1"/><div><p className="font-bold text-espresso">Weekly family learning guides</p><p className="text-sm text-muted2">Every recipe ties to a family learning topic — fractions, nutrition, cultural background.</p></div></li>
           </ul>
         </div>
       </section>
@@ -153,10 +154,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 text-center text-sm text-muted2">
-        <p className="script text-2xl text-terracotta">Jeana Marie's Kitchen Club</p>
-        <p className="mt-2">Made with love for homeschool families. © {new Date().getFullYear()}</p>
-      </footer>
+      <Footer/>
     </div>
   );
 }

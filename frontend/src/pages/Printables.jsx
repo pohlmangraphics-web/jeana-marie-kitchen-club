@@ -3,7 +3,7 @@ import Nav from "../components/Nav";
 import { api, API } from "../lib/api";
 import { Download, Printer } from "lucide-react";
 
-const KIND_LABEL = { coloring: "Coloring Page", food_id: "Food ID", shopping_list: "Shopping List", meal_costing: "Meal Costing", lesson_plan: "Lesson Plan" };
+const KIND_LABEL = { coloring: "Coloring Page", food_id: "Food ID", shopping_list: "Shopping List", meal_costing: "Meal Costing", lesson_plan: "Family Learning Guide" };
 
 export default function Printables() {
   const [items, setItems] = useState([]);
@@ -28,8 +28,8 @@ export default function Printables() {
       <Nav/>
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="script text-3xl text-terracotta">Printables</p>
-        <h1 className="serif text-4xl sm:text-5xl font-black text-espresso">Homeschool Library</h1>
-        <p className="mt-2 text-muted2">Print-ready 8.5×11 PDFs. Coloring pages, worksheets, shopping lists, meal costing sheets, lesson plans.</p>
+        <h1 className="serif text-4xl sm:text-5xl font-black text-espresso">Family Learning Library</h1>
+        <p className="mt-2 text-muted2">Print-ready 8.5×11 PDFs. Coloring pages, worksheets, shopping lists, meal costing sheets, and weekly family learning guides.</p>
 
         <div className="mt-6 flex gap-2 flex-wrap">
           {["", "little", "junior", "teen", "adult"].map(t => (
