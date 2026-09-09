@@ -380,6 +380,17 @@ async def delete_profile(pid: str, user=Depends(get_current_user)):
 async def samples():
     return await db.recipes.find({"is_sample": True}, {"_id": 0}).limit(3).to_list(3)
 
+@api.get("/recipes/featured")
+async def get_featured(user=Depends(get_current_user)):
+    doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
+    rid = (doc or {}).get("value", {}).get("recipe_id")
+    if not rid: return {"recipe": None}
+    r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+    if not r: return {"recipe": None}
+    if not r.get("is_sample") and not has_active_membership(user):
+        return {"recipe": None}
+    return {"recipe": r}
+
 @api.get("/recipes/this-week")
 async def this_week(user=Depends(get_current_user)):
     if not has_active_membership(user): raise HTTPException(402, "Active membership required")
@@ -590,6 +601,9 @@ async def printable_pdf(pid: str, user=Depends(get_current_user)):
     p = await db.printables.find_one({"id": pid}, {"_id": 0})
     if not p: raise HTTPException(404, "Not found")
 
+    # Track download
+    await db.printables.update_one({"id": pid}, {"$inc": {"download_count": 1}})
+
     # Prefer uploaded PDF over generated template
     if p.get("pdf_file_id"):
         rec = await db.files.find_one({"id": p["pdf_file_id"], "is_deleted": False}, {"_id": 0})
@@ -766,10 +780,12 @@ async def redeem(body: RedeemReq, user=Depends(get_current_user)):
 
 @api.post("/admin/codes")
 async def generate_codes(body: GenerateCodesReq, admin=Depends(require_admin)):
+    batch_id = uid()
     codes = []
     for _ in range(body.count):
         c = {"id": uid(), "code": gen_redeem_code(), "duration": body.duration, "note": body.note,
-             "created_by": admin["id"], "redeemed_by": None, "redeemed_at": None, "created_at": now_iso()}
+             "batch_id": batch_id, "created_by": admin["id"],
+             "redeemed_by": None, "redeemed_at": None, "created_at": now_iso()}
         await db.redeem_codes.insert_one(c); c.pop("_id", None); codes.append(c)
     return codes
 
@@ -799,6 +815,10 @@ async def analytics(admin=Depends(require_admin)):
     for t in top:
         r = await db.recipes.find_one({"id": t["_id"]}, {"_id": 0, "title": 1})
         top_recipes.append({"title": r["title"] if r else "?", "count": t["count"]})
+    top_printables = []
+    async for p in db.printables.find({}, {"_id": 0, "title": 1, "tier": 1, "kind": 1, "download_count": 1}).sort("download_count", -1).limit(10):
+        top_printables.append({"title": p["title"], "tier": p.get("tier"), "kind": p.get("kind"),
+                               "download_count": int(p.get("download_count") or 0)})
     return {
         "total_families": await db.users.count_documents({"role": "family"}),
         "active_families": users_active,
@@ -807,7 +827,66 @@ async def analytics(admin=Depends(require_admin)):
         "total_codes": await db.redeem_codes.count_documents({}),
         "codes_redeemed": await db.redeem_codes.count_documents({"redeemed_by": {"$ne": None}}),
         "top_recipes": top_recipes,
+        "top_printables": top_printables,
     }
+
+# --- Recipe of the Week ---
+class FeaturedReq(BaseModel):
+    recipe_id: Optional[str] = None
+
+@api.put("/admin/featured-recipe")
+async def set_featured(body: FeaturedReq, admin=Depends(require_admin)):
+    await db.settings.update_one(
+        {"key": "featured_recipe"},
+        {"$set": {"key": "featured_recipe", "value": {"recipe_id": body.recipe_id}}},
+        upsert=True,
+    )
+    return {"recipe_id": body.recipe_id}
+
+# --- Bulk print unredeemed codes ---
+@api.get("/admin/codes/print-sheet.pdf")
+async def codes_print_sheet(admin=Depends(require_admin)):
+    codes = await db.redeem_codes.find({"redeemed_by": None}, {"_id": 0}).sort("created_at", -1).to_list(2000)
+    pdf = FPDF(format="Letter"); pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page(); draw_brand_header(pdf)
+    pdf.set_font("Helvetica", "B", 22); pdf.set_text_color(44, 30, 22); pdf.ln(6)
+    mcell(pdf, 10, "Unredeemed Membership Codes", align="C")
+    pdf.set_font("Helvetica", "I", 10); pdf.set_text_color(129, 178, 154)
+    mcell(pdf, 6, f"Generated {datetime.now().strftime('%B %d, %Y at %I:%M %p')} - {len(codes)} codes total", align="C")
+    pdf.ln(4)
+
+    if not codes:
+        pdf.set_font("Helvetica", "I", 11); pdf.set_text_color(129, 178, 154)
+        mcell(pdf, 8, "No unredeemed codes. Generate some in the Admin > Codes tab.", align="C")
+    else:
+        # Group by (batch_id, duration). Legacy codes have no batch_id - group all under 'Legacy'.
+        groups: Dict[Any, List[dict]] = {}
+        for c in codes:
+            key = (c.get("batch_id") or "legacy", c["duration"])
+            groups.setdefault(key, []).append(c)
+        # Sort groups: newest batch first (by first code created_at desc), duration alphabetical
+        sorted_keys = sorted(groups.keys(), key=lambda k: (groups[k][0]["created_at"], k[1]), reverse=True)
+        DUR = {"monthly": "Monthly", "3month": "3-Month", "6month": "6-Month", "annual": "Annual"}
+        for i, key in enumerate(sorted_keys):
+            batch_id, duration = key
+            group_codes = groups[key]
+            if i > 0: pdf.ln(4)
+            when = group_codes[0]["created_at"][:10]
+            pdf.set_font("Helvetica", "B", 12); pdf.set_text_color(224, 122, 95)
+            batch_label = "Legacy (pre-batch tracking)" if batch_id == "legacy" else f"Batch {batch_id[:8]}"
+            mcell(pdf, 7, f"{DUR.get(duration, duration)} - {batch_label} - {when} - {len(group_codes)} code(s)")
+            pdf.set_font("Helvetica", "B", 10); pdf.set_text_color(44, 30, 22)
+            pdf.cell(75, 8, "Code", border=1)
+            pdf.cell(30, 8, "Duration", border=1)
+            pdf.cell(65, 8, "Note", border=1, ln=True)
+            for c in group_codes:
+                pdf.set_font("Courier", "B", 11); pdf.cell(75, 8, safe_txt(c["code"]), border=1)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.cell(30, 8, safe_txt(DUR.get(c["duration"], c["duration"])), border=1)
+                pdf.cell(65, 8, safe_txt((c.get("note") or "")[:38]), border=1, ln=True)
+    out = bytes(pdf.output(dest="S"))
+    return Response(content=out, media_type="application/pdf",
+                    headers={"Content-Disposition": 'attachment; filename="unredeemed_codes.pdf"'})
 
 # --- Admin CSV/JSON export ---
 @api.get("/admin/export/{entity}")

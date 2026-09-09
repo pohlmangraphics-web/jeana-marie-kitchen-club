@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import { api, API } from "../lib/api";
 import { toast } from "sonner";
-import { Trash2, Upload, Download, Copy, Pencil, FileText, X } from "lucide-react";
+import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
 
 export default function Admin() {
@@ -50,8 +50,12 @@ function RecipesAdmin() {
   const [list, setList] = useState([]);
   const [f, setF] = useState(BLANK_RECIPE);
   const [editingId, setEditingId] = useState(null);
+  const [featuredId, setFeaturedId] = useState(null);
   const [busy, setBusy] = useState(false);
-  const load = () => api.get("/recipes").then(r => setList(r.data)).catch(() => {});
+  const load = () => {
+    api.get("/recipes").then(r => setList(r.data)).catch(() => {});
+    api.get("/recipes/featured").then(r => setFeaturedId(r.data.recipe?.id || null)).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   const startEdit = (r) => {
@@ -102,6 +106,12 @@ function RecipesAdmin() {
     await api.post(`/recipes/${id}/duplicate`);
     toast.success("Duplicated — edit the copy below");
     load();
+  };
+  const feature = async (id) => {
+    const next = featuredId === id ? null : id;
+    await api.put("/admin/featured-recipe", { recipe_id: next });
+    setFeaturedId(next);
+    toast.success(next ? "Set as Jeana's Pick of the Week" : "Cleared featured recipe");
   };
   const uploadPhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -177,6 +187,10 @@ function RecipesAdmin() {
                   <p className="text-xs text-muted2">{r.tier} · {new Date(r.published_at).toLocaleDateString()}{r.recipe_card_file_id ? " · 📄 Card" : ""}{r.is_sample ? " · Sample" : ""}</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
+                  <button data-testid={`admin-recipe-feature-${r.id}`} onClick={() => feature(r.id)} title={featuredId === r.id ? "Featured — click to unfeature" : "Feature as Jeana's Pick"}
+                    className={`p-2 rounded-lg ${featuredId === r.id ? "bg-honey text-espresso" : "hover:bg-honey/30 text-espresso"}`}>
+                    <Star className={`w-4 h-4 ${featuredId === r.id ? "fill-espresso" : ""}`}/>
+                  </button>
                   <button data-testid={`admin-recipe-edit-${r.id}`} onClick={() => startEdit(r)} title="Edit" className="p-2 rounded-lg hover:bg-honey/30 text-espresso"><Pencil className="w-4 h-4"/></button>
                   <button data-testid={`admin-recipe-dup-${r.id}`} onClick={() => duplicate(r.id)} title="Duplicate" className="p-2 rounded-lg hover:bg-sage/20 text-sage"><Copy className="w-4 h-4"/></button>
                   <button data-testid={`admin-recipe-del-${r.id}`} onClick={() => del(r.id)} title="Delete" className="p-2 rounded-lg hover:bg-terracotta/10 text-terracotta"><Trash2 className="w-4 h-4"/></button>
@@ -331,12 +345,22 @@ function CodesAdmin() {
     toast.success(`Generated ${count} codes`);
     load();
   };
+  const printSheet = async () => {
+    const t = localStorage.getItem("jmk_token");
+    const res = await fetch(`${API}/admin/codes/print-sheet.pdf`, { headers: { Authorization: `Bearer ${t}` } });
+    if (!res.ok) return toast.error("Print sheet failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "unredeemed_codes.pdf"; a.click();
+    URL.revokeObjectURL(url);
+  };
   return (
     <div>
       <div className="card-warm p-6 flex flex-wrap gap-3 items-end">
         <div><label className="text-sm font-bold">Duration</label><select data-testid="admin-code-duration" value={duration} onChange={(e) => setDuration(e.target.value)} className="mt-1 block px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["monthly","3month","6month","annual"].map(d => <option key={d} value={d}>{d}</option>)}</select></div>
         <div><label className="text-sm font-bold">Count</label><input data-testid="admin-code-count" type="number" min="1" max="100" value={count} onChange={(e) => setCount(e.target.value)} className="mt-1 block w-32 px-3 py-2 rounded-lg border-2 border-espresso/10"/></div>
         <button data-testid="admin-code-generate" onClick={gen} className="btn-pill btn-primary">Generate</button>
+        <button data-testid="admin-code-print-sheet" onClick={printSheet} className="btn-pill btn-outline"><Download className="w-4 h-4"/> Print unredeemed sheet</button>
       </div>
       <div className="mt-6 grid md:grid-cols-2 gap-3 max-h-[600px] overflow-y-auto">
         {list.map(c => (
@@ -381,12 +405,27 @@ function AnalyticsAdmin() {
           <p className="serif text-4xl font-black text-espresso mt-2">{v}</p>
         </div>
       ))}
-      <div className="md:col-span-4 card-warm p-6">
-        <p className="text-xs uppercase tracking-widest text-sage font-bold">Top Recipes</p>
+      <div className="md:col-span-2 card-warm p-6">
+        <p className="text-xs uppercase tracking-widest text-sage font-bold">Top Recipes (favorites)</p>
         <ul className="mt-3 space-y-2">
-          {d.top_recipes.map((r, i) => <li key={i} className="flex justify-between"><span>{r.title}</span><span className="font-bold">{r.count}</span></li>)}
+          {d.top_recipes.map((r, i) => <li key={i} className="flex justify-between"><span className="truncate pr-2">{r.title}</span><span className="font-bold shrink-0">{r.count}</span></li>)}
           {d.top_recipes.length === 0 && <li className="text-muted2">No favorites yet.</li>}
         </ul>
+      </div>
+      <div className="md:col-span-2 card-warm p-6">
+        <p className="text-xs uppercase tracking-widest text-sage font-bold">Printable Downloads</p>
+        <div data-testid="admin-printable-downloads">
+          <ul className="mt-3 space-y-2">
+            {(d.top_printables || []).map((p, i) => (
+              <li key={i} className="flex justify-between">
+                <span className="truncate pr-2">{p.title}</span>
+                <span className="font-bold shrink-0">{p.download_count}</span>
+              </li>
+            ))}
+            {(!d.top_printables || d.top_printables.length === 0) && <li className="text-muted2">No downloads tracked yet.</li>}
+          </ul>
+          <p data-testid="admin-privacy-note" className="mt-3 text-xs text-muted2 italic">Aggregate download counts. No child-level data collected.</p>
+        </div>
       </div>
     </div>
   );

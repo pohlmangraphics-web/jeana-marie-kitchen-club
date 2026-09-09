@@ -4,7 +4,8 @@ import Nav from "../components/Nav";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
-import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon } from "lucide-react";
+import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass } from "lucide-react";
+import OnboardingTour, { replayTour } from "../components/OnboardingTour";
 
 const TIERS = { little: "Little Chefs (3–5)", junior: "Junior Cooks (6–9)", teen: "Teen Kitchen (10–15)", adult: "Mom & Dad" };
 const BOOKS = [
@@ -20,9 +21,11 @@ export default function Dashboard() {
   const { user } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [thisWeek, setThisWeek] = useState([]);
+  const [featured, setFeatured] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(BLANK_FORM);
+  const [tourReplay, setTourReplay] = useState(false);
   const nav = useNavigate();
   const active = user?.has_active_membership;
 
@@ -31,9 +34,12 @@ export default function Dashboard() {
     setProfiles(p.data);
     if (active) {
       try { const w = await api.get("/recipes/this-week"); setThisWeek(w.data); } catch {}
+      try { const f = await api.get("/recipes/featured"); setFeatured(f.data.recipe); } catch {}
     }
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [active]);
+
+  const startReplay = () => { replayTour(); setTourReplay(true); };
 
   const openCreate = () => { setEditingId(null); setForm(BLANK_FORM); setShowModal(true); };
   const openEdit = (p) => { setEditingId(p.id); setForm({ name: p.name, tier: p.tier, avatar_emoji: p.avatar_emoji }); setShowModal(true); };
@@ -167,15 +173,42 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        {/* This week */}
+        {/* Jeana's Pick of the Week */}
+        {active && featured && (
+          <div className="mt-14">
+            <div className="flex items-center gap-2">
+              <Star className="w-5 h-5 text-terracotta fill-terracotta"/>
+              <p className="script text-2xl text-terracotta">Jeana's Pick of the Week</p>
+            </div>
+            <Link data-testid="featured-recipe" to={`/app/recipe/${featured.id}`}
+              className="mt-3 grid md:grid-cols-5 gap-6 card-warm overflow-hidden hover:-translate-y-1 transition-transform">
+              {featured.photo_url && (
+                <div className="md:col-span-2 h-56 md:h-auto">
+                  <img src={featured.photo_url} alt="" className="w-full h-full object-cover"/>
+                </div>
+              )}
+              <div className={`p-6 flex flex-col justify-center ${featured.photo_url ? "md:col-span-3" : "md:col-span-5"}`}>
+                <div className="inline-flex self-start items-center gap-1 px-3 py-1 rounded-full bg-honey text-espresso text-xs uppercase tracking-widest font-bold">
+                  <Star className="w-3 h-3 fill-espresso"/> New this week
+                </div>
+                <p className="mt-3 text-xs uppercase tracking-widest text-sage font-bold">{featured.homeschool_topic || featured.tier}</p>
+                <h3 className="mt-1 serif text-3xl font-black text-espresso">{featured.title}</h3>
+                <p className="mt-3 text-muted2 line-clamp-3">{featured.description}</p>
+                <p className="mt-4 text-xs text-muted2">{featured.prep_time + featured.cook_time} min · Serves {featured.servings}</p>
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {/* Other new weekly recipes */}
         {active && thisWeek.length > 0 && (
           <div className="mt-14">
             <div className="flex items-baseline justify-between">
-              <h2 className="serif text-3xl font-black text-espresso">This Week</h2>
+              <h2 className="serif text-3xl font-black text-espresso">{featured ? "Also New This Week" : "This Week"}</h2>
               <p className="text-sm text-muted2">Fresh from Jeana Marie's kitchen</p>
             </div>
             <div className="mt-6 grid md:grid-cols-3 gap-6">
-              {thisWeek.slice(0, 6).map((r) => (
+              {thisWeek.filter(r => !featured || r.id !== featured.id).slice(0, 6).map((r) => (
                 <Link data-testid={`week-recipe-${r.id}`} key={r.id} to={`/app/recipe/${r.id}`} className="card-warm overflow-hidden hover:-translate-y-1 transition-transform">
                   {r.photo_url && <img src={r.photo_url} alt="" className="w-full h-40 object-cover"/>}
                   <div className="p-4">
@@ -187,6 +220,12 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+
+        <div className="mt-14 text-center">
+          <button data-testid="replay-tour" onClick={startReplay} className="btn-pill btn-outline !py-2 !px-4 text-sm">
+            <Compass className="w-4 h-4"/> Replay welcome tour
+          </button>
+        </div>
       </div>
 
       {showModal && (
@@ -218,6 +257,7 @@ export default function Dashboard() {
           </form>
         </div>
       )}
+      <OnboardingTour forceOpen={tourReplay} onClose={() => setTourReplay(false)}/>
     </div>
   );
 }

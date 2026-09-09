@@ -1,0 +1,26 @@
+{
+  "summary": "Iteration 9 full-stack testing complete. Backend: 11/11 tests pass in test_iteration9.py covering GET /api/recipes/featured (member auth, null/empty/set states), PUT /api/admin/featured-recipe (admin sets/clears, family gets 403), POST /api/admin/codes (shared batch_id per bulk create), GET /api/admin/codes/print-sheet.pdf (valid PDF header), printable download_count increment via /api/printables/{id}/pdf, GET /api/admin/analytics top_printables array with title/tier/kind/download_count, plus regression (/api/, /api/recipes/samples, /api/recipes, /api/printables, /api/gift-certificate/pdf). Frontend: verified admin can toggle featured star (bg-honey highlight), Print unredeemed sheet button present, Printable Downloads panel present, demo family dashboard shows 'Jeana's Pick of the Week' hero with data-testid=featured-recipe, 'Also New This Week' heading with featured deduped, 'New this week' pill, Replay tour button, 3-step OnboardingTour (auto-opens when jmk_onboarded absent, back disabled on step 1, next advances to 'Let\\'s cook!' CTA, complete sets LS=done, skip sets LS=skipped, no auto-open when LS set, replay works). Mobile 375x812 dashboard verified. Featured recipe cleanup ran successfully at end of test.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin Analytics", "issues": ["'No child-level data collected.' note is placed as a <p> sibling OUTSIDE the <ul data-testid=admin-printable-downloads>. Text is visible on page — cosmetic/testability concern only. Consider moving inside the testid container or adding its own data-testid for automation."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_iteration9.py", "/app/test_reports/pytest/iter9.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py L523: dead code `pdf.cell(...) if False else None` still present (flagged in iter8, unresolved).",
+    "server.py printable_pdf: file-fetch exceptions still swallowed silently (flagged in iter8).",
+    "OnboardingTour.jsx: the useEffect that reads localStorage doesn't handle profile-switch — if a user completes onboarding, a second family joining on the same browser will never see it. Acceptable since jmk_onboarded is per-browser by design, but worth documenting.",
+    "server.py L862-876 code print-sheet groups 'legacy' bucket labeled 'Legacy (pre-batch tracking)' — good handling of pre-existing codes without batch_id."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration9.py"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all iter9 flows verified)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "Transient printable 'Iter9 Tracking' created and deleted within test. Featured recipe was toggled on for a recipe during frontend test then toggled off in cleanup step (verified). Backend module-scope fixture also PUTs recipe_id:null at end. Demo dashboard should be back to no-featured state.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iteration9.py can be reused for regression. Login route is /auth (not /login). Feature toggle button testid pattern: admin-recipe-feature-{recipe_id}. Onboarding LS key is 'jmk_onboarded' with values 'done' or 'skipped'."
+}
