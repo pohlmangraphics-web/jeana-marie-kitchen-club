@@ -25,6 +25,7 @@ export default function Nav() {
           {user ? (
             <>
               <Link data-testid="nav-dashboard" to="/app" className="text-sm font-semibold hover:text-terracotta">My Kitchen</Link>
+              <Link data-testid="nav-library" to="/app/library" className="text-sm font-semibold hover:text-terracotta hidden sm:inline">Library</Link>
               <Link data-testid="nav-printables" to="/app/printables" className="text-sm font-semibold hover:text-terracotta hidden sm:inline">Printables</Link>
               <Link data-testid="nav-redeem" to="/redeem" className="text-sm font-semibold hover:text-terracotta hidden sm:inline">Redeem</Link>
               {user.role === "admin" && (

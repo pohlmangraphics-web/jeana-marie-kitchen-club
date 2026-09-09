@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import { api, API } from "../lib/api";
 import { toast } from "sonner";
-import { Trash2, Upload, Download } from "lucide-react";
+import { Trash2, Upload, Download, Copy, Pencil, FileText, X } from "lucide-react";
 import { useFlags } from "../lib/flags";
 
 export default function Admin() {
@@ -36,30 +36,96 @@ export default function Admin() {
   );
 }
 
+async function uploadFile(file, purpose) {
+  const fd = new FormData(); fd.append("file", file); fd.append("purpose", purpose);
+  const t = localStorage.getItem("jmk_token");
+  const res = await fetch(`${API}/files/upload`, { method: "POST", headers: { Authorization: `Bearer ${t}` }, body: fd });
+  if (!res.ok) throw new Error("Upload failed");
+  return res.json();
+}
+
+const BLANK_RECIPE = { title: "", tier: "adult", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", photo_file_id: null, recipe_card_file_id: null, homeschool_topic: "", lesson_plan: "", is_sample: false };
+
 function RecipesAdmin() {
   const [list, setList] = useState([]);
-  const [f, setF] = useState({ title: "", tier: "adult", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", homeschool_topic: "", lesson_plan: "", is_sample: false });
+  const [f, setF] = useState(BLANK_RECIPE);
+  const [editingId, setEditingId] = useState(null);
+  const [busy, setBusy] = useState(false);
   const load = () => api.get("/recipes").then(r => setList(r.data)).catch(() => {});
   useEffect(() => { load(); }, []);
 
-  const create = async (e) => {
-    e.preventDefault();
-    await api.post("/recipes", {
-      ...f,
-      ingredients: f.ingredients.split("\n").filter(Boolean),
-      steps: f.steps.split("\n").filter(Boolean),
-      prep_time: Number(f.prep_time), cook_time: Number(f.cook_time), servings: Number(f.servings),
+  const startEdit = (r) => {
+    setEditingId(r.id);
+    setF({
+      title: r.title || "", tier: r.tier || "adult", description: r.description || "",
+      ingredients: (r.ingredients || []).join("\n"),
+      steps: (r.steps || []).join("\n"),
+      prep_time: r.prep_time ?? 10, cook_time: r.cook_time ?? 15, servings: r.servings ?? 4,
+      photo_url: r.photo_url || "", photo_file_id: r.photo_file_id || null,
+      recipe_card_file_id: r.recipe_card_file_id || null,
+      homeschool_topic: r.homeschool_topic || "", lesson_plan: r.lesson_plan || "",
+      is_sample: !!r.is_sample,
     });
-    toast.success("Recipe published");
-    setF({ ...f, title: "", description: "", ingredients: "", steps: "" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const cancelEdit = () => { setEditingId(null); setF(BLANK_RECIPE); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const payload = {
+        ...f,
+        ingredients: f.ingredients.split("\n").filter(Boolean),
+        steps: f.steps.split("\n").filter(Boolean),
+        prep_time: Number(f.prep_time), cook_time: Number(f.cook_time), servings: Number(f.servings),
+      };
+      if (editingId) {
+        await api.patch(`/recipes/${editingId}`, payload);
+        toast.success("Recipe updated");
+      } else {
+        await api.post("/recipes", payload);
+        toast.success("Recipe published");
+      }
+      cancelEdit();
+      load();
+    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    finally { setBusy(false); }
+  };
+
+  const del = async (id) => {
+    if (!window.confirm("Delete this recipe? This cannot be undone.")) return;
+    await api.delete(`/recipes/${id}`); load();
+    if (editingId === id) cancelEdit();
+  };
+  const duplicate = async (id) => {
+    await api.post(`/recipes/${id}/duplicate`);
+    toast.success("Duplicated — edit the copy below");
     load();
   };
-  const del = async (id) => { await api.delete(`/recipes/${id}`); load(); };
+  const uploadPhoto = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setBusy(true);
+    try { const r = await uploadFile(file, "recipe_photo"); setF({...f, photo_file_id: r.file_id, photo_url: `${API}/files/${r.file_id}?auth=${localStorage.getItem("jmk_token")}`}); toast.success("Photo uploaded"); }
+    catch { toast.error("Photo upload failed"); }
+    finally { setBusy(false); }
+  };
+  const uploadCard = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setBusy(true);
+    try { const r = await uploadFile(file, "recipe_card"); setF({...f, recipe_card_file_id: r.file_id}); toast.success("Recipe card uploaded"); }
+    catch { toast.error("Card upload failed"); }
+    finally { setBusy(false); }
+  };
+  const removeCard = () => setF({...f, recipe_card_file_id: null});
 
   return (
     <div className="grid lg:grid-cols-2 gap-8">
-      <form onSubmit={create} className="card-warm p-6 space-y-3">
-        <h3 className="serif text-xl font-bold">New Recipe</h3>
+      <form onSubmit={submit} className="card-warm p-6 space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="serif text-xl font-bold">{editingId ? "Edit Recipe" : "New Recipe"}</h3>
+          {editingId && <button type="button" onClick={cancelEdit} data-testid="admin-recipe-cancel" className="text-xs text-muted2 underline">Cancel</button>}
+        </div>
         <input data-testid="admin-recipe-title" required placeholder="Title" value={f.title} onChange={(e) => setF({...f, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <select data-testid="admin-recipe-tier" value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">
           {["little","junior","teen","adult"].map(t => <option key={t} value={t}>{t}</option>)}
@@ -72,22 +138,50 @@ function RecipesAdmin() {
           <input placeholder="Cook" type="number" value={f.cook_time} onChange={(e) => setF({...f, cook_time: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10"/>
           <input placeholder="Servings" type="number" value={f.servings} onChange={(e) => setF({...f, servings: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         </div>
-        <input placeholder="Photo URL" value={f.photo_url} onChange={(e) => setF({...f, photo_url: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+        <div className="rounded-lg border-2 border-dashed border-espresso/10 p-3">
+          <p className="text-xs font-bold text-espresso mb-2">Recipe photo</p>
+          <input placeholder="Photo URL (or upload below)" value={f.photo_url} onChange={(e) => setF({...f, photo_url: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10 text-sm"/>
+          <div className="mt-2 flex items-center gap-2">
+            <input data-testid="admin-recipe-photo" type="file" accept="image/*" onChange={uploadPhoto}/>
+            {f.photo_file_id && <span className="text-xs text-sage">✓ Uploaded</span>}
+          </div>
+        </div>
         <input placeholder="Homeschool topic" value={f.homeschool_topic} onChange={(e) => setF({...f, homeschool_topic: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <textarea placeholder="Family learning guide" value={f.lesson_plan} onChange={(e) => setF({...f, lesson_plan: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+        <div className="rounded-lg border-2 border-dashed border-espresso/10 p-3">
+          <p className="text-xs font-bold text-espresso mb-2">Recipe card PDF (optional)</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="btn-pill btn-outline !py-1 !px-3 text-xs cursor-pointer">
+              <Upload className="w-3 h-3"/> {f.recipe_card_file_id ? "Replace" : "Upload"} PDF
+              <input data-testid="admin-recipe-card" type="file" accept="application/pdf" onChange={uploadCard} className="hidden"/>
+            </label>
+            {f.recipe_card_file_id && (
+              <>
+                <span className="text-xs text-sage flex items-center gap-1"><FileText className="w-3 h-3"/> Attached</span>
+                <button data-testid="admin-recipe-card-remove" type="button" onClick={removeCard} className="btn-pill btn-outline !py-1 !px-3 text-xs"><X className="w-3 h-3"/> Remove</button>
+              </>
+            )}
+          </div>
+        </div>
         <label className="flex gap-2 items-center text-sm"><input type="checkbox" checked={f.is_sample} onChange={(e) => setF({...f, is_sample: e.target.checked})}/> Free sample</label>
-        <button data-testid="admin-recipe-publish" className="btn-pill btn-primary">Publish</button>
+        <button data-testid="admin-recipe-publish" disabled={busy} className="btn-pill btn-primary">{busy ? "…" : (editingId ? "Save Changes" : "Publish")}</button>
       </form>
       <div>
         <h3 className="serif text-xl font-bold mb-3">Published ({list.length})</h3>
-        <div className="space-y-2 max-h-[600px] overflow-y-auto">
+        <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
           {list.map(r => (
-            <div key={r.id} className="card-warm p-4 flex justify-between items-center">
-              <div>
-                <p className="font-bold text-espresso">{r.title}</p>
-                <p className="text-xs text-muted2">{r.tier} · {new Date(r.published_at).toLocaleDateString()}</p>
+            <div key={r.id} data-testid={`admin-recipe-${r.id}`} className={`card-warm p-4 ${editingId === r.id ? "ring-2 ring-terracotta" : ""}`}>
+              <div className="flex justify-between items-start gap-2">
+                <div className="min-w-0">
+                  <p className="font-bold text-espresso truncate">{r.title}</p>
+                  <p className="text-xs text-muted2">{r.tier} · {new Date(r.published_at).toLocaleDateString()}{r.recipe_card_file_id ? " · 📄 Card" : ""}{r.is_sample ? " · Sample" : ""}</p>
+                </div>
+                <div className="flex gap-1 shrink-0">
+                  <button data-testid={`admin-recipe-edit-${r.id}`} onClick={() => startEdit(r)} title="Edit" className="p-2 rounded-lg hover:bg-honey/30 text-espresso"><Pencil className="w-4 h-4"/></button>
+                  <button data-testid={`admin-recipe-dup-${r.id}`} onClick={() => duplicate(r.id)} title="Duplicate" className="p-2 rounded-lg hover:bg-sage/20 text-sage"><Copy className="w-4 h-4"/></button>
+                  <button data-testid={`admin-recipe-del-${r.id}`} onClick={() => del(r.id)} title="Delete" className="p-2 rounded-lg hover:bg-terracotta/10 text-terracotta"><Trash2 className="w-4 h-4"/></button>
+                </div>
               </div>
-              <button data-testid={`admin-recipe-del-${r.id}`} onClick={() => del(r.id)} className="text-terracotta"><Trash2 className="w-4 h-4"/></button>
             </div>
           ))}
         </div>
@@ -96,38 +190,131 @@ function RecipesAdmin() {
   );
 }
 
+const BLANK_PRINTABLE = { title: "", tier: "little", kind: "coloring", description: "", content: "", pdf_file_id: null, thumbnail_file_id: null };
+
 function PrintablesAdmin() {
   const [list, setList] = useState([]);
-  const [f, setF] = useState({ title: "", tier: "little", kind: "coloring", description: "", content: "" });
+  const [f, setF] = useState(BLANK_PRINTABLE);
+  const [editingId, setEditingId] = useState(null);
+  const [busy, setBusy] = useState(false);
   const load = () => api.get("/printables").then(r => setList(r.data));
   useEffect(() => { load(); }, []);
-  const create = async (e) => {
-    e.preventDefault();
-    await api.post("/printables", f);
-    toast.success("Published");
-    setF({ ...f, title: "", description: "", content: "" });
-    load();
+
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setF({
+      title: p.title || "", tier: p.tier || "little", kind: p.kind || "coloring",
+      description: p.description || "", content: p.content || "",
+      pdf_file_id: p.pdf_file_id || null, thumbnail_file_id: p.thumbnail_file_id || null,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
+  const cancelEdit = () => { setEditingId(null); setF(BLANK_PRINTABLE); };
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      if (editingId) { await api.patch(`/printables/${editingId}`, f); toast.success("Printable updated"); }
+      else { await api.post("/printables", f); toast.success("Printable published"); }
+      cancelEdit(); load();
+    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    finally { setBusy(false); }
+  };
+  const del = async (id) => {
+    if (!window.confirm("Delete this printable?")) return;
+    await api.delete(`/printables/${id}`); load();
+    if (editingId === id) cancelEdit();
+  };
+  const uploadPdf = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setBusy(true);
+    try { const r = await uploadFile(file, "printable_pdf"); setF({...f, pdf_file_id: r.file_id}); toast.success("PDF uploaded"); }
+    catch { toast.error("PDF upload failed"); }
+    finally { setBusy(false); }
+  };
+  const uploadThumb = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    setBusy(true);
+    try { const r = await uploadFile(file, "printable_thumbnail"); setF({...f, thumbnail_file_id: r.file_id}); toast.success("Thumbnail uploaded"); }
+    catch { toast.error("Thumbnail upload failed"); }
+    finally { setBusy(false); }
+  };
+
   return (
     <div className="grid lg:grid-cols-2 gap-8">
-      <form onSubmit={create} className="card-warm p-6 space-y-3">
-        <h3 className="serif text-xl font-bold">New Printable</h3>
+      <form onSubmit={submit} className="card-warm p-6 space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="serif text-xl font-bold">{editingId ? "Edit Printable" : "New Printable"}</h3>
+          {editingId && <button type="button" onClick={cancelEdit} data-testid="admin-printable-cancel" className="text-xs text-muted2 underline">Cancel</button>}
+        </div>
         <input data-testid="admin-printable-title" required placeholder="Title" value={f.title} onChange={(e) => setF({...f, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <div className="grid grid-cols-2 gap-2">
-          <select value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["little","junior","teen","adult"].map(t => <option key={t} value={t}>{t}</option>)}</select>
-          <select value={f.kind} onChange={(e) => setF({...f, kind: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["coloring","food_id","shopping_list","meal_costing","lesson_plan"].map(t => <option key={t} value={t}>{t}</option>)}</select>
+          <select data-testid="admin-printable-tier" value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["little","junior","teen","adult"].map(t => <option key={t} value={t}>{t}</option>)}</select>
+          <select data-testid="admin-printable-kind" value={f.kind} onChange={(e) => setF({...f, kind: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["coloring","food_id","shopping_list","meal_costing","lesson_plan"].map(t => <option key={t} value={t}>{t}</option>)}</select>
         </div>
-        <textarea placeholder="Description" value={f.description} onChange={(e) => setF({...f, description: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
-        <textarea placeholder="Content / instructions" rows={4} value={f.content} onChange={(e) => setF({...f, content: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
-        <button data-testid="admin-printable-publish" className="btn-pill btn-primary">Publish</button>
-      </form>
-      <div className="space-y-2 max-h-[600px] overflow-y-auto">
-        {list.map(p => (
-          <div key={p.id} className="card-warm p-4 flex justify-between items-center">
-            <div><p className="font-bold text-espresso">{p.title}</p><p className="text-xs text-muted2">{p.tier} · {p.kind}</p></div>
-            <button data-testid={`admin-printable-del-${p.id}`} onClick={async () => { await api.delete(`/printables/${p.id}`); load(); }} className="text-terracotta"><Trash2 className="w-4 h-4"/></button>
+        <textarea data-testid="admin-printable-desc" placeholder="Description" value={f.description} onChange={(e) => setF({...f, description: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+
+        <div className="rounded-lg border-2 border-dashed border-espresso/10 p-3">
+          <p className="text-xs font-bold text-espresso mb-2">Upload finished PDF (optional — falls back to generated template)</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="btn-pill btn-outline !py-1 !px-3 text-xs cursor-pointer">
+              <Upload className="w-3 h-3"/> {f.pdf_file_id ? "Replace" : "Upload"} PDF
+              <input data-testid="admin-printable-pdf" type="file" accept="application/pdf" onChange={uploadPdf} className="hidden"/>
+            </label>
+            {f.pdf_file_id && (
+              <>
+                <span className="text-xs text-sage flex items-center gap-1"><FileText className="w-3 h-3"/> Uploaded</span>
+                <button data-testid="admin-printable-pdf-remove" type="button" onClick={() => setF({...f, pdf_file_id: null})} className="btn-pill btn-outline !py-1 !px-3 text-xs"><X className="w-3 h-3"/> Remove</button>
+              </>
+            )}
           </div>
-        ))}
+        </div>
+
+        <div className="rounded-lg border-2 border-dashed border-espresso/10 p-3">
+          <p className="text-xs font-bold text-espresso mb-2">Thumbnail image (optional)</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <label className="btn-pill btn-outline !py-1 !px-3 text-xs cursor-pointer">
+              <Upload className="w-3 h-3"/> {f.thumbnail_file_id ? "Replace" : "Upload"} image
+              <input data-testid="admin-printable-thumb" type="file" accept="image/*" onChange={uploadThumb} className="hidden"/>
+            </label>
+            {f.thumbnail_file_id && (
+              <>
+                <span className="text-xs text-sage">✓ Attached</span>
+                <button data-testid="admin-printable-thumb-remove" type="button" onClick={() => setF({...f, thumbnail_file_id: null})} className="btn-pill btn-outline !py-1 !px-3 text-xs"><X className="w-3 h-3"/> Remove</button>
+              </>
+            )}
+          </div>
+        </div>
+
+        <textarea placeholder="Content / instructions (used if no PDF uploaded)" rows={3} value={f.content} onChange={(e) => setF({...f, content: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+        <button data-testid="admin-printable-publish" disabled={busy} className="btn-pill btn-primary">{busy ? "…" : (editingId ? "Save Changes" : "Publish")}</button>
+      </form>
+
+      <div>
+        <h3 className="serif text-xl font-bold mb-3">Published ({list.length})</h3>
+        <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
+          {list.map(p => (
+            <div key={p.id} data-testid={`admin-printable-${p.id}`} className={`card-warm p-4 flex items-center gap-3 ${editingId === p.id ? "ring-2 ring-terracotta" : ""}`}>
+              <div className="w-16 h-16 rounded-lg bg-ivory overflow-hidden flex items-center justify-center shrink-0">
+                {p.thumbnail_file_id
+                  ? <img src={`${API}/printables/${p.id}/thumbnail`} alt="" className="w-full h-full object-cover"/>
+                  : <FileText className="w-8 h-8 text-terracotta/40"/>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-espresso truncate">{p.title}</p>
+                <p className="text-xs text-muted2">
+                  {p.tier} · {p.kind}
+                  {p.pdf_file_id ? <span className="ml-1 text-sage">· 📎 Uploaded PDF</span> : <span className="ml-1 text-muted2">· Generated</span>}
+                </p>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button data-testid={`admin-printable-edit-${p.id}`} onClick={() => startEdit(p)} title="Edit" className="p-2 rounded-lg hover:bg-honey/30 text-espresso"><Pencil className="w-4 h-4"/></button>
+                <button data-testid={`admin-printable-del-${p.id}`} onClick={() => del(p.id)} title="Delete" className="p-2 rounded-lg hover:bg-terracotta/10 text-terracotta"><Trash2 className="w-4 h-4"/></button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

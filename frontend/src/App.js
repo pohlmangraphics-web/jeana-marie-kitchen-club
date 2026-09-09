@@ -20,6 +20,7 @@ import FAQ from "./pages/FAQ";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import GiftPage from "./pages/Gift";
+import Library from "./pages/Library";
 
 function Protected({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ function App() {
             <Route path="/payment/cancel" element={<PaymentCancel/>}/>
             <Route path="/app" element={<Protected><Dashboard/></Protected>}/>
             <Route path="/app/book/:tier" element={<Protected><Book/></Protected>}/>
+            <Route path="/app/library" element={<Protected><Library/></Protected>}/>
             <Route path="/app/recipe/:id" element={<Protected><Recipe/></Protected>}/>
             <Route path="/app/journal" element={<Protected><Journal/></Protected>}/>
             <Route path="/app/printables" element={<Protected><Printables/></Protected>}/>

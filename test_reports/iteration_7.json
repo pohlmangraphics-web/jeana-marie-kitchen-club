@@ -1,0 +1,31 @@
+{
+  "summary": "Iteration 7 review — backend uploads + edit/duplicate/delete + Library + dashboard sections. Backend: 19/21 pytest pass in /app/backend/tests/test_iteration7.py. Two FAILURES both on GET /api/printables/{id}/pdf when serving the GENERATED template (not the uploaded-PDF path). Uploaded-PDF path works. Root cause: fpdf2's multi_cell defaults to new_x=XPos.RIGHT, so after the first `pdf.multi_cell(0, 12, title, align='C')` at line 604, the cursor sits at the right margin and the second call at line 606 raises FPDFException('Not enough horizontal space to render a single character'). This is deterministic and blocks ALL generated printable PDFs (any title length). Frontend: comprehensive pass — admin login works at /auth (not /login); RecipesAdmin shows 6 recipes with admin-recipe-edit-*/dup-*/del-* data-testids, admin-recipe-photo & admin-recipe-card inputs present, edit prefills existing title correctly, duplicate creates row with '(Copy)' suffix (6→7); PrintablesAdmin has admin-printable-pdf and admin-printable-thumb inputs, generated badge shown; demo family dashboard shows all 3 sections (Family profiles heading, Recipe Books heading), 4 profile-tile-* + 4 profile-edit-* + 4 profile-delete-* + dash-book-{little,junior,teen,adult} + dash-open-library + nav-library link; /app/library shows h1='Recipe Library', all 4 library-section-* headings, 7 recipe cards, tier filter chips; sample recipe without recipe_card_file_id correctly hides recipe-card-download button; fresh signup (newfam+it7-*@example.com/password12345) lands on /app with profiles=0, profiles-empty marker visible, 4 book tiles still visible; fresh family /app/library shows 'Active membership required — Activate membership' (correct 402 handling). Regression: GET /api/flags, /api/recipes/samples (3 items), /api/printables list, /api/gift-certificate/pdf, /api/admin/codes+/redeem all 200. TestUploads (recipe_photo/recipe_card/printable_pdf/printable_thumbnail) all 200 for admin. RecipeAdmin PATCH+duplicate+card download+402/404 all 200 as expected.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/printables/{id}/pdf (generated fallback path)", "issue": "500 InternalServerError from fpdf2 `Not enough horizontal space to render a single character`. Reason: server.py line 604 uses pdf.multi_cell(0, 12, title, align='C') which in fpdf2 defaults to new_x=XPos.RIGHT — cursor ends at right margin, so line 606 multi_cell has 0 width available. Every generated printable PDF is broken regardless of title length. Reproduce: create any printable without pdf_file_id then GET /printables/{id}/pdf. Fix: pass `new_x=XPos.LMARGIN, new_y=YPos.NEXT` to each multi_cell call (or add pdf.ln(0)/set_x(pdf.l_margin) between them). Also affects the description multi_cell later in the same handler.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iteration7.py", "/app/test_reports/pytest/iter7.xml"],
+  "action_items": [
+    "Fix FPDF multi_cell cursor bug in server.py::printable_pdf (lines 604-608) — use new_x=XPos.LMARGIN or reset x between multi_cell calls. Re-run test_iteration7.py::TestPrintables::test_pdf_generated_when_no_pdf_file_id and test_long_title_wraps to verify."
+  ],
+  "critical_code_review_comments": [
+    "server.py line 604-608: fpdf2 multi_cell defaults changed vs pyfpdf — must import `from fpdf.enums import XPos, YPos` and pass new_x=XPos.LMARGIN, new_y=YPos.NEXT to every multi_cell(0,...) call. Currently affects all 3 multi_cells in printable_pdf.",
+    "Test route mismatch note (not a bug, but confusing): App.js registers login at /auth (via <Route path='/auth' element={<Auth/>}/>). Any external docs or user-facing links must point to /auth, not /login.",
+    "printable_pdf falls through silently on file-fetch exception (line 597-598: `except Exception: pass`). Should at least log the error to aid debugging."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "90.5% (19/21)", "frontend": "100% (all review checks)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "One transient TEST_ recipe + TEST_ printable created and deleted within test lifecycle. One fresh signup (newfam+it7-<timestamp>@example.com/password12345) created — no cleanup needed as it has no membership.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Iter7 backend has one critical FPDF regression on the generated-template printable PDF path. All uploads, PATCH, duplicate, thumbnail, member/402/404 paths work. Frontend fully compliant with all 18 review bullets. Login route is /auth (not /login). Frontend hot-reload sometimes leaves the last preview blank until frontend is restarted via supervisorctl — I restarted once during this run.",
+  "rca of the issue": "fpdf2 (installed as `fpdf` module import path but v2 semantics) changed multi_cell default cursor position from BOTTOM/LEFT (fpdf1) to RIGHT/NEXT. When width=0 (fill to right margin), the resulting cursor.x == right-margin, so any subsequent multi_cell with width=0 has zero available horizontal space and raises FPDFException. Mitigation: pass explicit new_x/new_y args on every multi_cell in printable_pdf and recipe_pdf handlers."
+}

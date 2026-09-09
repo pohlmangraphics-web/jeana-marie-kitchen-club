@@ -22,6 +22,7 @@ import bcrypt
 import jwt
 import stripe
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 from collections import defaultdict, deque
 
 ROOT_DIR = Path(__file__).parent
@@ -172,6 +173,7 @@ class RecipeBody(BaseModel):
     servings: int = 4
     photo_file_id: Optional[str] = None
     photo_url: Optional[str] = None  # legacy or external
+    recipe_card_file_id: Optional[str] = None
     lesson_plan: Optional[str] = None
     homeschool_topic: Optional[str] = None
     published_at: Optional[str] = None
@@ -181,10 +183,17 @@ class RecipePatch(BaseModel):
     ingredients: Optional[List[str]] = None; steps: Optional[List[str]] = None
     prep_time: Optional[int] = None; cook_time: Optional[int] = None; servings: Optional[int] = None
     photo_file_id: Optional[str] = None; photo_url: Optional[str] = None
+    recipe_card_file_id: Optional[str] = None
     lesson_plan: Optional[str] = None; homeschool_topic: Optional[str] = None
     published_at: Optional[str] = None; is_sample: Optional[bool] = None
 class PrintableBody(BaseModel):
     title: str; tier: str; kind: str; description: str; content: str = ""
+    pdf_file_id: Optional[str] = None
+    thumbnail_file_id: Optional[str] = None
+class PrintablePatch(BaseModel):
+    title: Optional[str] = None; tier: Optional[str] = None; kind: Optional[str] = None
+    description: Optional[str] = None; content: Optional[str] = None
+    pdf_file_id: Optional[str] = None; thumbnail_file_id: Optional[str] = None
 class JournalCreate(BaseModel):
     profile_id: str; recipe_id: Optional[str] = None; title: str; notes: str = ""
     photo_file_id: Optional[str] = None
@@ -409,6 +418,32 @@ async def update_recipe(rid: str, body: RecipePatch, admin=Depends(require_admin
 async def delete_recipe(rid: str, admin=Depends(require_admin)):
     await db.recipes.delete_one({"id": rid}); return {"ok": True}
 
+@api.post("/recipes/{rid}/duplicate")
+async def duplicate_recipe(rid: str, admin=Depends(require_admin)):
+    r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+    if not r: raise HTTPException(404, "Not found")
+    r["id"] = uid()
+    r["title"] = f"{r.get('title','')} (Copy)"
+    r["is_sample"] = False
+    r["published_at"] = now_iso()
+    r["created_at"] = now_iso()
+    await db.recipes.insert_one(r); r.pop("_id", None); return r
+
+@api.get("/recipes/{rid}/card")
+async def get_recipe_card(rid: str, user=Depends(get_current_user)):
+    """Download the uploaded recipe card PDF (member-only)."""
+    r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+    if not r: raise HTTPException(404, "Not found")
+    if not r.get("is_sample") and not has_active_membership(user):
+        raise HTTPException(402, "Active membership required")
+    if not r.get("recipe_card_file_id"):
+        raise HTTPException(404, "No recipe card attached")
+    rec = await db.files.find_one({"id": r["recipe_card_file_id"], "is_deleted": False}, {"_id": 0})
+    if not rec: raise HTTPException(404, "File missing")
+    data, ctype = get_object(rec["storage_path"])
+    return Response(content=data, media_type=rec.get("content_type") or ctype or "application/pdf",
+                    headers={"Content-Disposition": f'attachment; filename="{r["title"].replace(" ","_")}_Recipe_Card.pdf"'})
+
 # --- Favorites / Made ---
 @api.get("/favorites/{pid}")
 async def get_favs(pid: str, user=Depends(get_current_user)):
@@ -445,6 +480,10 @@ def safe_txt(s: str) -> str:
     if not s: return ""
     return s.encode("latin-1", "replace").decode("latin-1")
 
+def mcell(pdf: FPDF, h: float, txt: str, align: str = "L"):
+    """multi_cell wrapper that resets cursor to left margin on next line - avoids fpdf2 default cursor drift."""
+    pdf.multi_cell(0, h, safe_txt(txt), align=align, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
 def draw_brand_header(pdf: FPDF, y: float = 10):
     """Draw the recipe book stack logo mark (mini) + brand line at top of the page."""
     x = 10
@@ -480,9 +519,9 @@ async def export_journal(pid: str, user=Depends(get_current_user)):
     pdf = FPDF(); pdf.set_auto_page_break(auto=True, margin=15); pdf.add_page()
     draw_brand_header(pdf)
     pdf.set_font("Helvetica", "B", 28); pdf.set_text_color(44, 30, 22); pdf.ln(20)
-    pdf.cell(0, 20, safe_txt(f"{user['family_name']} Family Cookbook"), ln=True, align="C")
+    pdf.multi_cell(0, 18, safe_txt(f"{user['family_name']} Family Cookbook"), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "I", 16); pdf.set_text_color(224, 122, 95)
-    pdf.cell(0, 12, safe_txt(f"By {profile['name']} - Jeana Marie's Kitchen Club"), ln=True, align="C")
+    pdf.multi_cell(0, 12, safe_txt(f"By {profile['name']} - Jeana Marie's Kitchen Club"), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "", 10); pdf.set_text_color(92, 74, 61); pdf.ln(10)
     pdf.cell(0, 8, safe_txt(f"Printed {datetime.now().strftime('%B %d, %Y')}"), ln=True, align="C")
     if entries:
@@ -492,15 +531,15 @@ async def export_journal(pid: str, user=Depends(get_current_user)):
             pdf.set_font("Helvetica", "B", 14); pdf.set_text_color(224, 122, 95)
             pdf.cell(0, 10, safe_txt(e["title"]), ln=True)
             pdf.set_font("Helvetica", "", 11); pdf.set_text_color(44, 30, 22)
-            pdf.multi_cell(0, 6, safe_txt(e.get("notes", ""))); pdf.ln(4)
+            pdf.multi_cell(0, 6, safe_txt(e.get("notes", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT); pdf.ln(4)
     for r in recipes:
         pdf.add_page(); pdf.set_font("Helvetica", "B", 18); pdf.set_text_color(44, 30, 22)
-        pdf.cell(0, 12, safe_txt(r["title"]), ln=True)
+        pdf.multi_cell(0, 10, safe_txt(r["title"]), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         pdf.set_font("Helvetica", "B", 12); pdf.cell(0, 8, "Ingredients", ln=True)
         pdf.set_font("Helvetica", "", 10)
         for ing in r.get("ingredients", []): pdf.cell(0, 5, safe_txt(f"- {ing}"), ln=True)
         pdf.ln(3); pdf.set_font("Helvetica", "B", 12); pdf.cell(0, 8, "Steps", ln=True); pdf.set_font("Helvetica", "", 10)
-        for i, s in enumerate(r.get("steps", []), 1): pdf.multi_cell(0, 5, safe_txt(f"{i}. {s}"))
+        for i, s in enumerate(r.get("steps", []), 1): pdf.multi_cell(0, 5, safe_txt(f"{i}. {s}"), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     out = bytes(pdf.output(dest="S"))
     return Response(content=out, media_type="application/pdf",
                     headers={"Content-Disposition": f"attachment; filename={user['family_name'].replace(' ','_')}_Cookbook.pdf"})
@@ -534,6 +573,14 @@ async def create_printable(body: PrintableBody, admin=Depends(require_admin)):
     p = {"id": uid(), **body.model_dump(), "created_at": now_iso()}
     await db.printables.insert_one(p); p.pop("_id", None); return p
 
+@api.patch("/printables/{pid}")
+async def update_printable(pid: str, body: PrintablePatch, admin=Depends(require_admin)):
+    upd = {k: v for k, v in body.model_dump().items() if v is not None}
+    r = await db.printables.update_one({"id": pid}, {"$set": upd})
+    if r.matched_count == 0:
+        raise HTTPException(404, "Not found")
+    return await db.printables.find_one({"id": pid}, {"_id": 0})
+
 @api.delete("/printables/{pid}")
 async def delete_printable(pid: str, admin=Depends(require_admin)):
     await db.printables.delete_one({"id": pid}); return {"ok": True}
@@ -542,14 +589,27 @@ async def delete_printable(pid: str, admin=Depends(require_admin)):
 async def printable_pdf(pid: str, user=Depends(get_current_user)):
     p = await db.printables.find_one({"id": pid}, {"_id": 0})
     if not p: raise HTTPException(404, "Not found")
+
+    # Prefer uploaded PDF over generated template
+    if p.get("pdf_file_id"):
+        rec = await db.files.find_one({"id": p["pdf_file_id"], "is_deleted": False}, {"_id": 0})
+        if rec:
+            try:
+                data, ctype = get_object(rec["storage_path"])
+                return Response(content=data, media_type=rec.get("content_type") or ctype or "application/pdf",
+                                headers={"Content-Disposition": f'attachment; filename="{p["title"].replace(" ","_")}.pdf"'})
+            except Exception:
+                pass  # fall through to generated
+
     pdf = FPDF(format="Letter"); pdf.set_auto_page_break(auto=True, margin=15); pdf.add_page()
     draw_brand_header(pdf)
     pdf.set_font("Helvetica", "B", 24); pdf.set_text_color(44, 30, 22)
-    pdf.cell(0, 14, safe_txt(p["title"]), ln=True, align="C")
+    # Wrap long titles inside margins
+    pdf.multi_cell(0, 12, safe_txt(p["title"]), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "I", 12); pdf.set_text_color(224, 122, 95)
-    pdf.cell(0, 8, safe_txt(f"Jeana Marie's Kitchen Club - {p['tier'].title()} Tier"), ln=True, align="C")
+    pdf.multi_cell(0, 7, safe_txt(f"Jeana Marie's Kitchen Club - {p['tier'].title()} Tier"), new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
     pdf.ln(6); pdf.set_font("Helvetica", "", 12); pdf.set_text_color(44, 30, 22)
-    pdf.multi_cell(0, 8, safe_txt(p.get("description", ""))); pdf.ln(4)
+    pdf.multi_cell(0, 8, safe_txt(p.get("description", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT); pdf.ln(4)
     kind = p.get("kind")
     if kind == "shopping_list":
         pdf.set_font("Helvetica", "B", 14); pdf.cell(0, 10, "My Shopping List", ln=True); pdf.set_font("Helvetica", "", 12)
@@ -563,13 +623,24 @@ async def printable_pdf(pid: str, user=Depends(get_current_user)):
             for w in [80, 30, 35]: pdf.cell(w, 10, "", border=1)
             pdf.cell(35, 10, "", border=1, ln=True)
     elif kind == "coloring":
-        pdf.multi_cell(0, 8, safe_txt(p.get("content", ""))); pdf.ln(10)
+        pdf.multi_cell(0, 8, safe_txt(p.get("content", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT); pdf.ln(10)
         pdf.set_draw_color(224, 122, 95); pdf.rect(30, pdf.get_y(), 150, 100)
     else:
-        pdf.multi_cell(0, 8, safe_txt(p.get("content", "")))
+        pdf.multi_cell(0, 8, safe_txt(p.get("content", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     out = bytes(pdf.output(dest="S"))
     return Response(content=out, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{p["title"].replace(" ","_")}.pdf"'})
+
+@api.get("/printables/{pid}/thumbnail")
+async def printable_thumbnail(pid: str):
+    """Public thumbnail (no auth) for library thumbnails."""
+    p = await db.printables.find_one({"id": pid}, {"_id": 0})
+    if not p or not p.get("thumbnail_file_id"): raise HTTPException(404, "No thumbnail")
+    rec = await db.files.find_one({"id": p["thumbnail_file_id"], "is_deleted": False}, {"_id": 0})
+    if not rec: raise HTTPException(404, "Not found")
+    data, ctype = get_object(rec["storage_path"])
+    return Response(content=data, media_type=rec.get("content_type") or ctype,
+                    headers={"Cache-Control": "public, max-age=3600"})
 
 # --- Gift Certificate (public - no auth) ---
 DURATION_LABEL = {"monthly": "1 Month", "3month": "3 Months", "6month": "6 Months", "annual": "1 Full Year"}
@@ -646,7 +717,7 @@ async def gift_certificate_pdf(body: GiftCertReq, request: Request):
     if body.message:
         pdf.ln(4)
         pdf.set_font("Helvetica", "I", 12); pdf.set_text_color(44, 30, 22)
-        pdf.multi_cell(0, 6, safe_txt(f'"{body.message}"'), align="C")
+        pdf.multi_cell(0, 6, safe_txt(f'"{body.message}"'), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     # Redeem code box
     pdf.ln(10)
@@ -672,7 +743,7 @@ async def gift_certificate_pdf(body: GiftCertReq, request: Request):
     pdf.multi_cell(0, 3, safe_txt(
         "Jeana Marie's Kitchen Club provides family cooking activities and supplemental educational enrichment. "
         "It is not a school, accredited educational program or provider of academic credit."
-    ), align="C")
+    ), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     out = bytes(pdf.output(dest="S"))
     filename = f"KitchenClub_Gift_{body.to.replace(' ', '_')}.pdf"

@@ -1,0 +1,19 @@
+{
+  "summary": "Iteration 8 — narrow retest of the FPDF multi_cell critical bug from iter7. All 26 backend tests pass (21 iter7 regression + 5 new iter8 cases). Verified: (1) GET /api/printables/{id}/pdf with NO pdf_file_id returns valid %PDF-* body >500 bytes for short titles, (2) same with a 145-char long title returns valid PDF (was 500 before), (3) uploaded PDF path still serves marker bytes verbatim, (4) GET /api/journal/{profile_id}/export returns valid PDF for demo family after enabling personalized_pdf_export flag (flag toggled back OFF in teardown), (5) POST /api/gift-certificate/pdf with long recipient/from names returns valid PDF. All PDFs verified to start with %PDF- header, application/pdf content-type, and reasonable size.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_iteration7.py", "/app/backend/tests/test_iteration8.py", "/app/test_reports/pytest/iter8.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py L523 has dead code `pdf.cell(...) if False else None` — should be removed. Leftover from the fpdf1->fpdf2 migration.",
+    "server.py L595-598 still swallows file-fetch exceptions silently in printable_pdf; add a logger.warning to aid future debugging."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration8.py"],
+  "success_rate": {"backend": "100% (26/26)", "frontend": "not tested (backend only)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "Transient printables (Iter8 Short, long-title, Iter8 Uploaded) all created and deleted within test lifecycle. Feature flag personalized_pdf_export toggled ON then OFF within TestJournalExport.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "FPDF multi_cell fix is fully validated. printable_pdf, export_journal, and gift_certificate_pdf all now handle long titles/names correctly by passing new_x=XPos.LMARGIN, new_y=YPos.NEXT. test_iteration8.py can be reused as a smoke suite for any future FPDF-related changes. Note pytest.ini requires REACT_APP_BACKEND_URL to be exported in the shell env before invocation (the test file no longer has a URL fallback).",
+  "rca of the issue": "Resolved in iter7 fix. RCA: fpdf2 changed multi_cell default cursor to XPos.RIGHT (was BOTTOM/LEFT in fpdf1); consecutive width=0 multi_cell calls raised FPDFException 'Not enough horizontal space'. Fix applied in server.py: import XPos/YPos from fpdf.enums and pass new_x=XPos.LMARGIN, new_y=YPos.NEXT on every multi_cell(0,...) call across printable_pdf, export_journal, and gift_certificate_pdf handlers. Retest confirms all three PDF-generating endpoints work with both short and long text inputs."
+}

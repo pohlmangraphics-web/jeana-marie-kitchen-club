@@ -42,15 +42,20 @@ export default function Printables() {
 
         <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.map(p => (
-            <div key={p.id} data-testid={`printable-${p.id}`} className="card-warm p-6">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-sage">
-                <Printer className="w-3 h-3"/> {KIND_LABEL[p.kind]} · {p.tier}
+            <div key={p.id} data-testid={`printable-${p.id}`} className="card-warm overflow-hidden">
+              {p.thumbnail_file_id && (
+                <img src={`${API}/printables/${p.id}/thumbnail`} alt="" className="w-full h-40 object-cover"/>
+              )}
+              <div className="p-6">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-widest font-bold text-sage">
+                  <Printer className="w-3 h-3"/> {KIND_LABEL[p.kind]} · {p.tier}
+                </div>
+                <h3 className="mt-2 serif text-xl font-bold text-espresso">{p.title}</h3>
+                <p className="mt-2 text-sm text-muted2">{p.description}</p>
+                <button data-testid={`printable-download-${p.id}`} onClick={() => download(p)} className="mt-4 btn-pill btn-primary !py-2 !px-4 text-sm">
+                  <Download className="w-4 h-4"/> Download PDF
+                </button>
               </div>
-              <h3 className="mt-2 serif text-xl font-bold text-espresso">{p.title}</h3>
-              <p className="mt-2 text-sm text-muted2">{p.description}</p>
-              <button data-testid={`printable-download-${p.id}`} onClick={() => download(p)} className="mt-4 btn-pill btn-primary !py-2 !px-4 text-sm">
-                <Download className="w-4 h-4"/> Download PDF
-              </button>
             </div>
           ))}
         </div>
