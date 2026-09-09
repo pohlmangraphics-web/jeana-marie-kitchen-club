@@ -11,21 +11,27 @@ const TIERS = [
   { key: "teen", label: "Teen Kitchen (10–15)" },
   { key: "adult", label: "Mom & Dad" },
 ];
+const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Holiday"];
 
 export default function Library() {
   const [tier, setTier] = useState("");
   const [q, setQ] = useState("");
+  const [category, setCategory] = useState("");
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
   useEffect(() => {
     setLoading(true);
-    api.get(`/recipes${tier ? `?tier=${tier}` : ""}${q ? `${tier ? "&" : "?"}q=${encodeURIComponent(q)}` : ""}`)
+    const params = new URLSearchParams();
+    if (tier) params.set("tier", tier);
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    api.get(`/recipes${params.toString() ? `?${params}` : ""}`)
       .then(r => { setRecipes(r.data); setErr(""); })
       .catch(e => setErr(e.response?.status === 402 ? "Active membership required" : "Failed to load"))
       .finally(() => setLoading(false));
-  }, [tier, q]);
+  }, [tier, q, category]);
 
   const grouped = recipes.reduce((acc, r) => {
     (acc[r.tier] = acc[r.tier] || []).push(r);
@@ -53,6 +59,16 @@ export default function Library() {
                 className={`btn-pill !py-2 !px-4 text-xs ${tier === t.key ? "btn-primary" : "btn-outline"}`}>{t.label}</button>
             ))}
           </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
+          <span className="text-xs uppercase tracking-widest text-sage font-bold">Category:</span>
+          <button data-testid="library-cat-all" onClick={() => setCategory("")}
+            className={`btn-pill !py-1 !px-3 text-xs ${category === "" ? "btn-primary" : "btn-outline"}`}>Any</button>
+          {CATEGORIES.map(c => (
+            <button data-testid={`library-cat-${c}`} key={c} onClick={() => setCategory(category === c ? "" : c)}
+              className={`btn-pill !py-1 !px-3 text-xs ${category === c ? "btn-primary" : "btn-outline"}`}>{c}</button>
+          ))}
         </div>
 
         {err && (
@@ -105,6 +121,11 @@ function RecipeCard({ r }) {
         <p className="text-xs uppercase tracking-widest text-terracotta font-bold">{r.tier}{r.recipe_card_file_id ? " · 📄 Card" : ""}</p>
         <h3 className="mt-1 serif text-lg font-bold text-espresso">{r.title}</h3>
         <p className="text-xs text-muted2 mt-1">{r.prep_time + r.cook_time} min · Serves {r.servings}</p>
+        {r.categories && r.categories.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {r.categories.map(c => <span key={c} className="text-[10px] uppercase tracking-widest bg-honey/40 text-espresso px-2 py-0.5 rounded-full font-bold">{c}</span>)}
+          </div>
+        )}
       </div>
     </Link>
   );

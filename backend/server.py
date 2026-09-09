@@ -174,6 +174,7 @@ class RecipeBody(BaseModel):
     photo_file_id: Optional[str] = None
     photo_url: Optional[str] = None  # legacy or external
     recipe_card_file_id: Optional[str] = None
+    categories: List[str] = Field(default_factory=list)
     lesson_plan: Optional[str] = None
     homeschool_topic: Optional[str] = None
     published_at: Optional[str] = None
@@ -184,6 +185,7 @@ class RecipePatch(BaseModel):
     prep_time: Optional[int] = None; cook_time: Optional[int] = None; servings: Optional[int] = None
     photo_file_id: Optional[str] = None; photo_url: Optional[str] = None
     recipe_card_file_id: Optional[str] = None
+    categories: Optional[List[str]] = None
     lesson_plan: Optional[str] = None; homeschool_topic: Optional[str] = None
     published_at: Optional[str] = None; is_sample: Optional[bool] = None
 class PrintableBody(BaseModel):
@@ -398,11 +400,12 @@ async def this_week(user=Depends(get_current_user)):
     return await db.recipes.find({"published_at": {"$gte": since}}, {"_id": 0}).sort("published_at", -1).to_list(50)
 
 @api.get("/recipes")
-async def list_recipes(tier: Optional[str] = None, q: Optional[str] = None, user=Depends(get_current_user)):
+async def list_recipes(tier: Optional[str] = None, q: Optional[str] = None, category: Optional[str] = None, user=Depends(get_current_user)):
     if not has_active_membership(user): raise HTTPException(402, "Active membership required")
     query: Dict[str, Any] = {}
     if tier: query["tier"] = tier
     if q: query["title"] = {"$regex": q, "$options": "i"}
+    if category: query["categories"] = category
     return await db.recipes.find(query, {"_id": 0}).sort("published_at", -1).to_list(500)
 
 @api.get("/recipes/{rid}")
@@ -829,6 +832,24 @@ async def analytics(admin=Depends(require_admin)):
         "top_recipes": top_recipes,
         "top_printables": top_printables,
     }
+
+# --- Etsy Shop URL (public read, admin write) ---
+class EtsyUrlReq(BaseModel):
+    url: str = Field(default="", max_length=500)
+
+@api.get("/branding/etsy-url")
+async def get_etsy_url():
+    doc = await db.settings.find_one({"key": "etsy_url"}, {"_id": 0})
+    return {"url": (doc or {}).get("value", {}).get("url", "")}
+
+@api.put("/admin/branding/etsy-url")
+async def set_etsy_url(body: EtsyUrlReq, admin=Depends(require_admin)):
+    await db.settings.update_one(
+        {"key": "etsy_url"},
+        {"$set": {"key": "etsy_url", "value": {"url": body.url.strip()}}},
+        upsert=True,
+    )
+    return {"url": body.url.strip()}
 
 # --- Recipe of the Week ---
 class FeaturedReq(BaseModel):

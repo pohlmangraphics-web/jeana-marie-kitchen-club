@@ -44,7 +44,8 @@ async function uploadFile(file, purpose) {
   return res.json();
 }
 
-const BLANK_RECIPE = { title: "", tier: "adult", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", photo_file_id: null, recipe_card_file_id: null, homeschool_topic: "", lesson_plan: "", is_sample: false };
+const BLANK_RECIPE = { title: "", tier: "adult", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", photo_file_id: null, recipe_card_file_id: null, categories: [], homeschool_topic: "", lesson_plan: "", is_sample: false };
+const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Holiday"];
 
 function RecipesAdmin() {
   const [list, setList] = useState([]);
@@ -67,6 +68,7 @@ function RecipesAdmin() {
       prep_time: r.prep_time ?? 10, cook_time: r.cook_time ?? 15, servings: r.servings ?? 4,
       photo_url: r.photo_url || "", photo_file_id: r.photo_file_id || null,
       recipe_card_file_id: r.recipe_card_file_id || null,
+      categories: r.categories || [],
       homeschool_topic: r.homeschool_topic || "", lesson_plan: r.lesson_plan || "",
       is_sample: !!r.is_sample,
     });
@@ -157,6 +159,18 @@ function RecipesAdmin() {
           </div>
         </div>
         <input placeholder="Homeschool topic" value={f.homeschool_topic} onChange={(e) => setF({...f, homeschool_topic: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
+        <div>
+          <p className="text-xs font-bold text-espresso mb-2">Categories</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(c => (
+              <button data-testid={`admin-recipe-cat-${c}`} type="button" key={c}
+                onClick={() => setF({...f, categories: f.categories.includes(c) ? f.categories.filter(x => x !== c) : [...f.categories, c]})}
+                className={`btn-pill !py-1 !px-3 text-xs ${f.categories.includes(c) ? "btn-primary" : "btn-outline"}`}>
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
         <textarea placeholder="Family learning guide" value={f.lesson_plan} onChange={(e) => setF({...f, lesson_plan: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <div className="rounded-lg border-2 border-dashed border-espresso/10 p-3">
           <p className="text-xs font-bold text-espresso mb-2">Recipe card PDF (optional)</p>
@@ -469,7 +483,12 @@ function BrandingAdmin() {
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [saved, setSaved] = useState(null);
-  useEffect(() => { api.get("/branding/logo").then(r => setSaved(r.data.file_id)); }, []);
+  const [etsyUrl, setEtsyUrl] = useState("");
+  const [etsyBusy, setEtsyBusy] = useState(false);
+  useEffect(() => {
+    api.get("/branding/logo").then(r => setSaved(r.data.file_id));
+    api.get("/branding/etsy-url").then(r => setEtsyUrl(r.data.url || ""));
+  }, []);
   const upload = async () => {
     if (!file) return;
     const fd = new FormData(); fd.append("file", file);
@@ -480,20 +499,43 @@ function BrandingAdmin() {
     setSaved(data.file_id);
     toast.success("Logo updated");
   };
+  const saveEtsy = async () => {
+    setEtsyBusy(true);
+    try {
+      await api.put("/admin/branding/etsy-url", { url: etsyUrl });
+      toast.success("Etsy shop URL saved");
+    } catch { toast.error("Failed to save"); }
+    finally { setEtsyBusy(false); }
+  };
   return (
-    <div className="max-w-xl">
-      <h3 className="serif text-xl font-bold">Brand Logo</h3>
-      <p className="text-sm text-muted2 mt-1">Recommended: transparent PNG or SVG, square, 512×512 minimum. Max 4MB. Palette locked to terracotta, honey, sage, buttercream, espresso.</p>
-      <div className="mt-4 flex items-center gap-6">
-        <div className="w-32 h-32 rounded-2xl border-2 border-espresso/10 bg-cream flex items-center justify-center overflow-hidden">
-          {preview ? <img src={preview} alt="preview" className="max-w-full max-h-full"/> :
-           saved ? <img src={`${API}/branding/logo/raw`} alt="current" className="max-w-full max-h-full"/> :
-           <span className="text-xs text-muted2">Default</span>}
+    <div className="max-w-xl space-y-10">
+      <div>
+        <h3 className="serif text-xl font-bold">Brand Logo</h3>
+        <p className="text-sm text-muted2 mt-1">Recommended: transparent PNG or SVG, square, 512×512 minimum. Max 4MB. Palette locked to terracotta, honey, sage, buttercream, espresso.</p>
+        <div className="mt-4 flex items-center gap-6">
+          <div className="w-32 h-32 rounded-2xl border-2 border-espresso/10 bg-cream flex items-center justify-center overflow-hidden">
+            {preview ? <img src={preview} alt="preview" className="max-w-full max-h-full"/> :
+             saved ? <img src={`${API}/branding/logo/raw`} alt="current" className="max-w-full max-h-full"/> :
+             <span className="text-xs text-muted2">Default</span>}
+          </div>
+          <div>
+            <input data-testid="logo-file" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"
+              onChange={(e) => { const f = e.target.files?.[0]; setFile(f || null); if (f) setPreview(URL.createObjectURL(f)); }}/>
+            <button data-testid="logo-upload" onClick={upload} disabled={!file} className="mt-3 btn-pill btn-primary"><Upload className="w-4 h-4"/> Upload logo</button>
+          </div>
         </div>
-        <div>
-          <input data-testid="logo-file" type="file" accept="image/png,image/svg+xml,image/jpeg,image/webp"
-            onChange={(e) => { const f = e.target.files?.[0]; setFile(f || null); if (f) setPreview(URL.createObjectURL(f)); }}/>
-          <button data-testid="logo-upload" onClick={upload} disabled={!file} className="mt-3 btn-pill btn-primary"><Upload className="w-4 h-4"/> Upload logo</button>
+      </div>
+
+      <div>
+        <h3 className="serif text-xl font-bold">Etsy Shop URL</h3>
+        <p className="text-sm text-muted2 mt-1">Used on the public Gift page's "Buy on Etsy" button. Leave blank to show a generic link.</p>
+        <div className="mt-3 flex gap-2 flex-wrap">
+          <input data-testid="etsy-url-input" type="url" value={etsyUrl} onChange={(e) => setEtsyUrl(e.target.value)}
+            placeholder="https://www.etsy.com/shop/JeanaMariesKitchenClub"
+            className="flex-1 min-w-[260px] px-3 py-2 rounded-lg border-2 border-espresso/10 outline-none focus:border-terracotta"/>
+          <button data-testid="etsy-url-save" onClick={saveEtsy} disabled={etsyBusy} className="btn-pill btn-primary">
+            {etsyBusy ? "…" : "Save"}
+          </button>
         </div>
       </div>
     </div>
