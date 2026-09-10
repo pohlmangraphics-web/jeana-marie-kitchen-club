@@ -29,6 +29,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from storage import put_object, get_object, init_storage, APP_NAME
+import email_service
 
 MONGO_URL = os.environ['MONGO_URL']
 DB_NAME = os.environ['DB_NAME']
@@ -153,6 +154,12 @@ class ForgotReq(BaseModel):
     email: EmailStr
 class ResetReq(BaseModel):
     token: str; new_password: str = Field(min_length=8)
+class PreferencesReq(BaseModel):
+    email_optin_weekly: Optional[bool] = None
+class FeaturedReq(BaseModel):
+    recipe_id: Optional[str] = None
+    starts_at: Optional[str] = None
+    ends_at: Optional[str] = None
 class ProfileCreate(BaseModel):
     name: str
     tier: Literal["little", "junior", "teen", "adult"]
@@ -280,9 +287,58 @@ async def forgot(req: ForgotReq, request: Request):
             "reset_token": token,
             "reset_token_expires": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat()
         }})
-        # Note: Email delivery via Resend deferred to Phase 4. Token returned for now (admin can share via secure channel).
-        return {"ok": True, "reset_token": token, "note": "Email delivery not enabled; deliver token securely via admin."}
-    return {"ok": True}  # Don't reveal existence
+        try:
+            await email_service.send_password_reset(to=user["email"], token=token)
+        except Exception as e:
+            logging.error(f"Password reset email failed: {e}")
+    return {"ok": True}
+
+@api.patch("/auth/preferences")
+async def update_preferences(body: PreferencesReq, user=Depends(get_current_user)):
+    upd = {}
+    if body.email_optin_weekly is not None:
+        upd["email_optin_weekly"] = bool(body.email_optin_weekly)
+    if upd:
+        await db.users.update_one({"id": user["id"]}, {"$set": upd})
+    u = await db.users.find_one({"id": user["id"]}, {"_id": 0, "password_hash": 0, "reset_token": 0})
+    return u
+
+@api.get("/unsubscribe")
+async def unsubscribe(token: str):
+    user = await db.users.find_one({"unsubscribe_token": token})
+    if not user:
+        return {"ok": False, "message": "Invalid unsubscribe link"}
+    await db.users.update_one({"id": user["id"]}, {"$set": {"email_optin_weekly": False}})
+    return {"ok": True, "message": "You have been unsubscribed from weekly recipe emails."}
+
+@api.post("/admin/email/weekly-drop")
+async def send_weekly_drop_broadcast(admin=Depends(require_admin)):
+    doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
+    rid = ((doc or {}).get("value") or {}).get("recipe_id")
+    r = None
+    if rid: r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+    if not r:
+        r = await db.recipes.find_one({"is_sample": {"$ne": True}}, {"_id": 0}, sort=[("published_at", -1)])
+    if not r: raise HTTPException(400, "No recipe available to announce")
+    users = await db.users.find({"role": "family", "email_optin_weekly": {"$ne": False}}, {"_id": 0}).to_list(10000)
+    sent, skipped, failed = 0, 0, 0
+    for u in users:
+        if not has_active_membership(u): skipped += 1; continue
+        if not u.get("unsubscribe_token"):
+            tok = secrets.token_urlsafe(24)
+            await db.users.update_one({"id": u["id"]}, {"$set": {"unsubscribe_token": tok}})
+            u["unsubscribe_token"] = tok
+        try:
+            await email_service.send_weekly_drop(
+                to=u["email"], family_name=u.get("family_name", "there"),
+                recipe_title=r["title"], recipe_id=r["id"],
+                unsubscribe_token=u["unsubscribe_token"],
+            )
+            sent += 1
+        except Exception as e:
+            logging.error(f"Weekly drop send failed for {u.get('email')}: {e}")
+            failed += 1
+    return {"sent": sent, "skipped_inactive": skipped, "failed": failed, "recipe": r["title"]}  # Don't reveal existence
 
 @api.post("/auth/reset-password")
 async def reset(req: ResetReq, request: Request):
@@ -385,13 +441,33 @@ async def samples():
 @api.get("/recipes/featured")
 async def get_featured(user=Depends(get_current_user)):
     doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
-    rid = (doc or {}).get("value", {}).get("recipe_id")
-    if not rid: return {"recipe": None}
-    r = await db.recipes.find_one({"id": rid}, {"_id": 0})
-    if not r: return {"recipe": None}
+    val = (doc or {}).get("value", {}) or {}
+    rid = val.get("recipe_id")
+    now = datetime.now(timezone.utc)
+    in_window = True
+    starts, ends = val.get("starts_at"), val.get("ends_at")
+    if starts:
+        try:
+            if datetime.fromisoformat(starts) > now: in_window = False
+        except Exception: pass
+    if ends:
+        try:
+            if datetime.fromisoformat(ends) < now: in_window = False
+        except Exception: pass
+    fallback_reason = None
+    r = None
+    if rid and in_window:
+        r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+        if not r: fallback_reason = "featured recipe missing"
+    else:
+        fallback_reason = "no featured recipe scheduled" if not rid else "outside schedule window"
+    if r is None:
+        # Fallback to newest published non-sample recipe
+        r = await db.recipes.find_one({"is_sample": {"$ne": True}}, {"_id": 0}, sort=[("published_at", -1)])
+    if not r: return {"recipe": None, "fallback": bool(fallback_reason)}
     if not r.get("is_sample") and not has_active_membership(user):
-        return {"recipe": None}
-    return {"recipe": r}
+        return {"recipe": None, "fallback": bool(fallback_reason)}
+    return {"recipe": r, "fallback": bool(fallback_reason)}
 
 @api.get("/recipes/this-week")
 async def this_week(user=Depends(get_current_user)):
@@ -852,17 +928,23 @@ async def set_etsy_url(body: EtsyUrlReq, admin=Depends(require_admin)):
     return {"url": body.url.strip()}
 
 # --- Recipe of the Week ---
-class FeaturedReq(BaseModel):
-    recipe_id: Optional[str] = None
-
 @api.put("/admin/featured-recipe")
 async def set_featured(body: FeaturedReq, admin=Depends(require_admin)):
     await db.settings.update_one(
         {"key": "featured_recipe"},
-        {"$set": {"key": "featured_recipe", "value": {"recipe_id": body.recipe_id}}},
+        {"$set": {"key": "featured_recipe", "value": {
+            "recipe_id": body.recipe_id,
+            "starts_at": body.starts_at,
+            "ends_at": body.ends_at,
+        }}},
         upsert=True,
     )
-    return {"recipe_id": body.recipe_id}
+    return {"recipe_id": body.recipe_id, "starts_at": body.starts_at, "ends_at": body.ends_at}
+
+@api.get("/admin/featured-recipe")
+async def get_featured_admin(admin=Depends(require_admin)):
+    doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
+    return (doc or {}).get("value", {})
 
 # --- Bulk print unredeemed codes ---
 @api.get("/admin/codes/print-sheet.pdf")

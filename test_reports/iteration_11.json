@@ -1,0 +1,28 @@
+{
+  "summary": "Iteration 11 fully tested. Backend: 19/19 pytest tests pass in test_iteration11.py covering (a) forgot-password: known email returns exact {ok:true} with NO reset_token in body but sets user.reset_token in DB and subsequent reset-password succeeds; unknown email also returns {ok:true} (no enumeration); (b) PATCH /api/auth/preferences flips email_optin_weekly and is reflected in GET /api/auth/me; (c) GET /api/unsubscribe with invalid token -> {ok:false, message:'Invalid unsubscribe link'}, with valid token (seeded in DB) -> {ok:true} and flips optin to false; (d) featured-recipe scheduling with past window -> fallback=true+newest non-sample, current window (2020..2099) -> fallback=false and scheduled recipe returned, null recipe -> fallback=true; GET /api/admin/featured-recipe works for admin; (e) POST /api/admin/email/weekly-drop: family gets 403, admin returns {sent, skipped_inactive, failed, recipe} with sent>=1 (observed sent=3, recipe='Rainbow Fruit Kabobs (Copy)'); (f) regression: login admin+demo, /recipes/samples, /flags, /printables, /admin/codes/print-sheet.pdf all 200. Frontend: /forgot page shows 'Check your inbox' via data-testid=forgot-sent with no raw token leaked; /unsubscribe?token=fake renders 'Invalid unsubscribe link' via data-testid=unsubscribe-status; Dashboard toggle-email-optin toggles state (label 'Pause weekly recipe emails' -> after reload 'Turn on weekly recipe emails', banner 'Weekly recipe emails: ON' also present); Admin > Recipes shows Jeana's Pick of the Week card, featured-starts/featured-ends datetime-locals fillable, featured-save-schedule toast shows 'Schedule saved' (verified via toast text), weekly-drop-broadcast prompts confirm and on accept shows 'Sent 3 email(s) - Rainbow Fruit Kabobs (Copy)' toast; Library /app/library shows Seasonal Collections row (data-testid=seasonal-collections) with 3 cards; clicking seasonal-holiday marks library-cat-Holiday chip as btn-primary; seasonal-breakfast marks library-cat-Breakfast btn-primary. Cleanup performed: featured_recipe reset to nulls; demo family email_optin_weekly restored to true via API.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Dashboard email opt-in toggle", "issue": "Toggle button label does not update in-place after clicking; requires a page reload for the label to reflect the new state (state is correctly persisted server-side; the top banner 'Weekly recipe emails: ON' also does update). Minor UX polish - the local component doesn't seem to re-read the updated preference after the PATCH resolves.", "affected_selectors": ["[data-testid=toggle-email-optin]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iteration11.py", "/app/test_reports/pytest/iter11.xml"],
+  "action_items": [
+    "(Minor) In Dashboard.jsx, after PATCH /api/auth/preferences resolves, update the local optin state or refetch /api/auth/me so the button label flips immediately without a page reload."
+  ],
+  "critical_code_review_comments": [
+    "server.py POST /api/admin/email/weekly-drop iterates users sequentially and awaits each send serially - fine for demo scale but for larger family lists consider asyncio.gather with a small concurrency limit.",
+    "server.py forgot-password: reset_token is stored but never expired/cleaned up on a subsequent successful login/failed reset; also, a new forgot request overwrites the previous token which is fine, but consider TTL index on reset_token_expires for hygiene.",
+    "server.py get_featured fallback logic: correctly falls back to newest non-sample, but when the caller has no active membership and the recipe is non-sample, returns {recipe: null, fallback: true} - the fallback flag is misleading in that case (fallback=true even though the actual reason was membership). Consider a separate 'reason' field.",
+    "Unsubscribe endpoint always returns 200 even for invalid tokens (ok:false) - correct for UX/anti-enumeration, but the frontend should show a friendly retry path (currently shows 'Back home' only)."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration11.py"],
+  "success_rate": {"backend": "100% (19/19)", "frontend": "100% (all iter11 flows verified; 1 minor UX note)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "Temporarily assigned unsubscribe_token='test_unsub_iter11_ABC123xyz' to demo@family.com for the unsubscribe test (left in place; harmless). Featured recipe schedule was set/cleared multiple times, final state: recipe_id=null, starts_at=null, ends_at=null. demo@family.com email_optin_weekly restored to true. Weekly drop broadcast did trigger real Resend sends to admin+demo (expected per test plan).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "test_iteration11.py runs standalone (needs REACT_APP_BACKEND_URL, MONGO_URL, DB_NAME env). Use `-o addopts=''` to bypass xdist parallelism which is configured in pytest.ini. Note login rate-limit is 5/300s per (IP+email); UI login testing can hit 429 quickly across parallel scripts - space out logins or reuse tokens. Featured recipe pinning uses ISO8601 with timezone; datetime-local input in Admin sends local time and gets ISO'd server-side. Seasonal collections cards map: holiday->Holiday, breakfast->Breakfast, snack->Snack (exact-case categories used by library-cat-{Cat} chips)."
+}

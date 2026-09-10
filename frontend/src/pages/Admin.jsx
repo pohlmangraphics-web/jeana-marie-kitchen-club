@@ -52,10 +52,15 @@ function RecipesAdmin() {
   const [f, setF] = useState(BLANK_RECIPE);
   const [editingId, setEditingId] = useState(null);
   const [featuredId, setFeaturedId] = useState(null);
+  const [featuredSchedule, setFeaturedSchedule] = useState({ starts_at: "", ends_at: "" });
+  const [broadcastBusy, setBroadcastBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const load = () => {
     api.get("/recipes").then(r => setList(r.data)).catch(() => {});
-    api.get("/recipes/featured").then(r => setFeaturedId(r.data.recipe?.id || null)).catch(() => {});
+    api.get("/admin/featured-recipe").then(r => {
+      setFeaturedId(r.data.recipe_id || null);
+      setFeaturedSchedule({ starts_at: r.data.starts_at || "", ends_at: r.data.ends_at || "" });
+    }).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -111,9 +116,22 @@ function RecipesAdmin() {
   };
   const feature = async (id) => {
     const next = featuredId === id ? null : id;
-    await api.put("/admin/featured-recipe", { recipe_id: next });
+    await api.put("/admin/featured-recipe", { recipe_id: next, starts_at: featuredSchedule.starts_at || null, ends_at: featuredSchedule.ends_at || null });
     setFeaturedId(next);
     toast.success(next ? "Set as Jeana's Pick of the Week" : "Cleared featured recipe");
+  };
+  const saveSchedule = async () => {
+    await api.put("/admin/featured-recipe", { recipe_id: featuredId, starts_at: featuredSchedule.starts_at || null, ends_at: featuredSchedule.ends_at || null });
+    toast.success("Schedule saved");
+  };
+  const broadcast = async () => {
+    if (!window.confirm("Send this week's recipe email to all opted-in active families?")) return;
+    setBroadcastBusy(true);
+    try {
+      const { data } = await api.post("/admin/email/weekly-drop");
+      toast.success(`Sent ${data.sent} email(s) - "${data.recipe}"`);
+    } catch (err) { toast.error(err.response?.data?.detail || "Broadcast failed"); }
+    finally { setBroadcastBusy(false); }
   };
   const uploadPhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -192,7 +210,32 @@ function RecipesAdmin() {
       </form>
       <div>
         <h3 className="serif text-xl font-bold mb-3">Published ({list.length})</h3>
-        <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2">
+        <div className="card-warm p-4 mb-4 bg-honey/20">
+          <p className="text-xs uppercase tracking-widest text-espresso font-bold flex items-center gap-1"><Star className="w-3 h-3 fill-espresso"/> Jeana's Pick of the Week</p>
+          <p className="text-xs text-muted2 mt-1">Optional schedule. If empty or outside the window, the newest published recipe shows automatically as the fallback.</p>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-bold">Starts</label>
+              <input data-testid="featured-starts" type="datetime-local" value={featuredSchedule.starts_at ? featuredSchedule.starts_at.slice(0,16) : ""}
+                onChange={(e) => setFeaturedSchedule({...featuredSchedule, starts_at: e.target.value ? new Date(e.target.value).toISOString() : ""})}
+                className="mt-1 w-full px-2 py-1.5 text-sm rounded-lg border-2 border-espresso/10"/>
+            </div>
+            <div>
+              <label className="text-xs font-bold">Ends</label>
+              <input data-testid="featured-ends" type="datetime-local" value={featuredSchedule.ends_at ? featuredSchedule.ends_at.slice(0,16) : ""}
+                onChange={(e) => setFeaturedSchedule({...featuredSchedule, ends_at: e.target.value ? new Date(e.target.value).toISOString() : ""})}
+                className="mt-1 w-full px-2 py-1.5 text-sm rounded-lg border-2 border-espresso/10"/>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2 flex-wrap">
+            <button data-testid="featured-save-schedule" onClick={saveSchedule} className="btn-pill btn-outline !py-1 !px-3 text-xs">Save schedule</button>
+            <button data-testid="weekly-drop-broadcast" onClick={broadcast} disabled={broadcastBusy}
+              className="btn-pill btn-primary !py-1 !px-3 text-xs">
+              {broadcastBusy ? "Sending…" : "Send weekly drop email"}
+            </button>
+          </div>
+        </div>
+        <div className="space-y-2 max-h-[720px] overflow-y-auto pr-2 recipes-list">
           {list.map(r => (
             <div key={r.id} data-testid={`admin-recipe-${r.id}`} className={`card-warm p-4 ${editingId === r.id ? "ring-2 ring-terracotta" : ""}`}>
               <div className="flex justify-between items-start gap-2">

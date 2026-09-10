@@ -4,7 +4,7 @@ import Nav from "../components/Nav";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
-import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass } from "lucide-react";
+import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass, Mail } from "lucide-react";
 import OnboardingTour, { replayTour } from "../components/OnboardingTour";
 
 const TIERS = { little: "Little Chefs (3–5)", junior: "Junior Cooks (6–9)", teen: "Teen Kitchen (10–15)", adult: "Mom & Dad" };
@@ -18,7 +18,7 @@ const EMOJIS = ["🧒","👦","👧","🧑","👨‍🍳","👩‍🍳","🦸","
 const BLANK_FORM = { name: "", tier: "junior", avatar_emoji: "🧒" };
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [profiles, setProfiles] = useState([]);
   const [thisWeek, setThisWeek] = useState([]);
   const [featured, setFeatured] = useState(null);
@@ -40,6 +40,14 @@ export default function Dashboard() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [active]);
 
   const startReplay = () => { replayTour(); setTourReplay(true); };
+  const toggleEmailOptin = async () => {
+    const next = !(user?.email_optin_weekly !== false);
+    try {
+      await api.patch("/auth/preferences", { email_optin_weekly: next });
+      await refresh();
+      toast.success(next ? "Weekly recipe emails: ON" : "Weekly recipe emails: OFF");
+    } catch { toast.error("Failed to update preference"); }
+  };
 
   const openCreate = () => { setEditingId(null); setForm(BLANK_FORM); setShowModal(true); };
   const openEdit = (p) => { setEditingId(p.id); setForm({ name: p.name, tier: p.tier, avatar_emoji: p.avatar_emoji }); setShowModal(true); };
@@ -221,9 +229,12 @@ export default function Dashboard() {
           </div>
         )}
 
-        <div className="mt-14 text-center">
+        <div className="mt-14 flex flex-wrap gap-3 justify-center">
           <button data-testid="replay-tour" onClick={startReplay} className="btn-pill btn-outline !py-2 !px-4 text-sm">
             <Compass className="w-4 h-4"/> Replay welcome tour
+          </button>
+          <button data-testid="toggle-email-optin" onClick={toggleEmailOptin} className="btn-pill btn-outline !py-2 !px-4 text-sm">
+            <Mail className="w-4 h-4"/> {user?.email_optin_weekly === false ? "Turn on weekly recipe emails" : "Pause weekly recipe emails"}
           </button>
         </div>
       </div>

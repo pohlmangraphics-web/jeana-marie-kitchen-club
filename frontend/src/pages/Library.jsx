@@ -71,6 +71,28 @@ export default function Library() {
           ))}
         </div>
 
+        {/* Seasonal Collections */}
+        <div className="mt-8" data-testid="seasonal-collections">
+          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Seasonal Collections</p>
+          <div className="mt-3 flex gap-3 flex-wrap">
+            <button data-testid="seasonal-holiday" onClick={() => setCategory("Holiday")}
+              className="rounded-2xl border-2 border-terracotta/30 bg-terracotta/5 hover:bg-terracotta/10 px-5 py-3 text-left">
+              <p className="serif font-bold text-espresso">Holiday Recipes</p>
+              <p className="text-xs text-muted2 mt-0.5">Thanksgiving, Christmas, cultural feasts</p>
+            </button>
+            <button data-testid="seasonal-breakfast" onClick={() => setCategory("Breakfast")}
+              className="rounded-2xl border-2 border-honey bg-honey/20 hover:bg-honey/40 px-5 py-3 text-left">
+              <p className="serif font-bold text-espresso">Weekend Breakfast</p>
+              <p className="text-xs text-muted2 mt-0.5">Slow mornings, big smiles</p>
+            </button>
+            <button data-testid="seasonal-snack" onClick={() => setCategory("Snack")}
+              className="rounded-2xl border-2 border-sage/40 bg-sage/10 hover:bg-sage/20 px-5 py-3 text-left">
+              <p className="serif font-bold text-espresso">Afterschool Snacks</p>
+              <p className="text-xs text-muted2 mt-0.5">Quick bites the kids can help make</p>
+            </button>
+          </div>
+        </div>
+
         {err && (
           <p data-testid="library-error" className="mt-6 text-terracotta font-bold">
             {err} — <Link to="/#pricing" className="underline">Activate membership</Link>
