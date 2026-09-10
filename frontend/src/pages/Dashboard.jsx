@@ -4,7 +4,7 @@ import Nav from "../components/Nav";
 import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
-import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass, Mail } from "lucide-react";
+import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass, Mail, CreditCard } from "lucide-react";
 import OnboardingTour, { replayTour } from "../components/OnboardingTour";
 
 const TIERS = { little: "Little Chefs (3–5)", junior: "Junior Cooks (6–9)", teen: "Teen Kitchen (10–15)", adult: "Mom & Dad" };
@@ -48,6 +48,19 @@ export default function Dashboard() {
       toast.success(next ? "Weekly recipe emails: ON" : "Weekly recipe emails: OFF");
     } catch { toast.error("Failed to update preference"); }
   };
+  const openPortal = async () => {
+    try {
+      const { data } = await api.post("/payments/portal", { origin_url: window.location.origin });
+      window.location.href = data.portal_url;
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Couldn't open the billing portal");
+    }
+  };
+
+  const sub = user?.subscription;
+  const cancelDate = sub?.cancel_at_period_end && sub?.current_period_end
+    ? new Date(sub.current_period_end).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })
+    : null;
 
   const openCreate = () => { setEditingId(null); setForm(BLANK_FORM); setShowModal(true); };
   const openEdit = (p) => { setEditingId(p.id); setForm({ name: p.name, tier: p.tier, avatar_emoji: p.avatar_emoji }); setShowModal(true); };
@@ -95,12 +108,27 @@ export default function Dashboard() {
           {!active && (
             <Link data-testid="dash-upgrade" to="/pricing" className="btn-pill btn-primary">Activate Membership</Link>
           )}
+          {active && sub?.has_stripe_subscription && (
+            <div className="flex items-center gap-3 flex-wrap">
+              {cancelDate && (
+                <span data-testid="dash-cancels-on" className="text-xs uppercase tracking-widest font-bold px-3 py-1.5 rounded-full bg-honey/70 text-espresso border border-honey">
+                  Cancels on {cancelDate}
+                </span>
+              )}
+              <button data-testid="dash-manage-membership" onClick={openPortal} className="btn-pill btn-outline text-sm !px-4 !py-2">
+                <CreditCard className="w-4 h-4"/> Manage Membership
+              </button>
+            </div>
+          )}
         </div>
 
         {!active && (
           <div data-testid="dash-membership-warning" className="mt-6 rounded-xl bg-honey/40 border-2 border-honey p-4 text-espresso">
-            <p className="font-bold">Journal is view-only until you activate.</p>
-            <p className="text-sm mt-1">Sample recipes and printables are still available. <Link className="underline font-bold" to="/redeem">Have a code?</Link></p>
+            <p className="font-bold">Your membership has ended — journal is now read-only.</p>
+            <p className="text-sm mt-1">
+              Your notes, favorites and "We Made This" history stay safely stored. Reactivate any time to add new entries.
+              Sample recipes and printables remain available. <Link className="underline font-bold" to="/redeem">Have a code?</Link>
+            </p>
           </div>
         )}
 

@@ -222,6 +222,8 @@ class GenerateCodesReq(BaseModel):
     duration: Literal["monthly", "3month", "6month", "annual"]; count: int = 1; note: Optional[str] = None
 class CheckoutReq(BaseModel):
     lookup_key: str; origin_url: str
+class PortalReq(BaseModel):
+    origin_url: str
 class FavoriteReq(BaseModel):
     profile_id: str; recipe_id: str; made: bool = False
 class FlagsUpdate(BaseModel):
@@ -275,6 +277,13 @@ async def me(user=Depends(get_current_user)):
     for k in ("password_hash", "verification_token", "reset_token", "reset_token_expires"):
         user.pop(k, None)
     user["has_active_membership"] = has_active_membership(user)
+    # Surface subscription status so UI can render "Manage Membership" + "Cancels on <date>"
+    user["subscription"] = {
+        "has_stripe_subscription": bool(user.get("stripe_subscription_id")),
+        "cancel_at_period_end": bool(user.get("subscription_cancel_at_period_end")),
+        "current_period_end": user.get("subscription_current_period_end"),
+        "status": user.get("subscription_status"),
+    }
     return user
 
 @api.post("/auth/forgot-password")
@@ -556,6 +565,8 @@ async def list_journal(pid: str, user=Depends(get_current_user)):
 
 @api.post("/journal")
 async def create_journal(body: JournalCreate, user=Depends(get_current_user)):
+    if not has_active_membership(user):
+        raise HTTPException(402, "Your membership has ended. Journal is read-only — reactivate to add notes.")
     flags = await get_flags()
     if body.photo_file_id and not flags.get("adult_photo_upload") and user.get("role") != "admin":
         raise HTTPException(403, "Photo attachment disabled")
@@ -564,6 +575,8 @@ async def create_journal(body: JournalCreate, user=Depends(get_current_user)):
 
 @api.delete("/journal/{eid}")
 async def delete_journal(eid: str, user=Depends(get_current_user)):
+    if not has_active_membership(user):
+        raise HTTPException(402, "Your membership has ended. Journal is read-only.")
     await db.journal.delete_one({"id": eid, "user_id": user["id"]}); return {"ok": True}
 
 def safe_txt(s: str) -> str:
@@ -1082,6 +1095,14 @@ async def checkout(body: CheckoutReq, user=Depends(get_current_user)):
         cancel_url=f"{body.origin_url}/payment/cancel",
         metadata={"user_id": user["id"], "lookup_key": body.lookup_key},
     )
+    # Reuse existing Stripe customer when available so Manage Membership shows full history
+    if user.get("stripe_customer_id"):
+        kwargs["customer"] = user["stripe_customer_id"]
+    else:
+        kwargs["customer_email"] = user["email"]
+    # Tag the subscription with our user_id so subscription.updated webhooks can find the user
+    if price.recurring:
+        kwargs["subscription_data"] = {"metadata": {"user_id": user["id"], "lookup_key": body.lookup_key}}
     try:
         session = stripe.checkout.Session.create(**kwargs, managed_payments={"enabled": True})
     except stripe.error.InvalidRequestError as e:
@@ -1096,6 +1117,23 @@ async def checkout(body: CheckoutReq, user=Depends(get_current_user)):
         "created_at": datetime.now(timezone.utc), "updated_at": datetime.now(timezone.utc),
     })
     return {"checkout_url": session.url, "session_id": session.id}
+
+@api.post("/payments/portal")
+async def customer_portal(body: PortalReq, user=Depends(get_current_user)):
+    """Redirect a subscriber to Stripe's hosted Customer Portal to manage payment method,
+    view invoices, or cancel future renewals (cancel_at_period_end)."""
+    cust_id = user.get("stripe_customer_id")
+    if not cust_id:
+        raise HTTPException(400, "No Stripe customer on file. Please contact support.")
+    try:
+        session = stripe.billing_portal.Session.create(
+            customer=cust_id,
+            return_url=f"{body.origin_url}/app",
+        )
+    except stripe.error.InvalidRequestError as e:
+        logging.error(f"Portal session creation failed for {user['email']}: {e}")
+        raise HTTPException(400, "Couldn't open the billing portal. Please contact support.")
+    return {"portal_url": session.url}
 
 def _grant_membership(user_id: str, lookup_key: str):
     if lookup_key not in PRICING: return
@@ -1121,9 +1159,56 @@ async def payment_status(session_id: str):
                               "stripe_subscription_id": s.subscription,
                               "updated_at": datetime.now(timezone.utc)}})
                 _grant_membership(rec.get("user_id"), rec.get("lookup_key"))
+                _attach_customer_and_subscription(rec.get("user_id"), s.get("customer"), s.get("subscription"))
                 rec = _sync_db.payment_transactions.find_one({"session_id": session_id})
         except stripe.error.StripeError: pass
     return {"session_id": rec["session_id"], "status": rec["status"], "payment_status": rec["payment_status"]}
+
+def _attach_customer_and_subscription(user_id: Optional[str], customer_id: Optional[str], subscription_id: Optional[str]):
+    """Persist Stripe customer + subscription IDs on the user so the Customer Portal can be opened."""
+    if not user_id: return
+    upd = {}
+    if customer_id: upd["stripe_customer_id"] = customer_id
+    if subscription_id:
+        upd["stripe_subscription_id"] = subscription_id
+        try:
+            sub = stripe.Subscription.retrieve(subscription_id)
+            upd["subscription_status"] = sub.get("status")
+            upd["subscription_cancel_at_period_end"] = bool(sub.get("cancel_at_period_end"))
+            cpe = sub.get("current_period_end")
+            if cpe: upd["subscription_current_period_end"] = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat()
+        except stripe.error.StripeError: pass
+    if upd:
+        _sync_db.users.update_one({"id": user_id}, {"$set": upd})
+
+def _sync_subscription_state(sub: dict):
+    """Persist subscription changes (cancel_at_period_end, current_period_end, status) to the user doc.
+    Also keeps membership_expires_at in sync with Stripe's current_period_end so auto-renewals extend access."""
+    sub_id = sub.get("id")
+    if not sub_id: return
+    u = _sync_db.users.find_one({"stripe_subscription_id": sub_id}) \
+        or _sync_db.users.find_one({"id": (sub.get("metadata") or {}).get("user_id")})
+    if not u: return
+    upd = {
+        "stripe_subscription_id": sub_id,
+        "stripe_customer_id": sub.get("customer") or u.get("stripe_customer_id"),
+        "subscription_status": sub.get("status"),
+        "subscription_cancel_at_period_end": bool(sub.get("cancel_at_period_end")),
+    }
+    cpe = sub.get("current_period_end")
+    if cpe:
+        iso = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat()
+        upd["subscription_current_period_end"] = iso
+        # Sync membership access to Stripe's period end (both for renewals and cancel_at_period_end)
+        cur = u.get("membership_expires_at")
+        try:
+            cur_dt = datetime.fromisoformat(cur) if cur else None
+        except Exception:
+            cur_dt = None
+        new_dt = datetime.fromtimestamp(cpe, tz=timezone.utc)
+        if cur_dt is None or new_dt > cur_dt:
+            upd["membership_expires_at"] = iso
+    _sync_db.users.update_one({"id": u["id"]}, {"$set": upd})
 
 @api.post("/stripe/webhook")
 async def stripe_webhook(request: Request):
@@ -1142,6 +1227,33 @@ async def stripe_webhook(request: Request):
                       "updated_at": datetime.now(timezone.utc)}})
         meta = obj.get("metadata") or {}
         _grant_membership(meta.get("user_id"), meta.get("lookup_key"))
+        _attach_customer_and_subscription(meta.get("user_id"), obj.get("customer"), obj.get("subscription"))
+    elif t in ("customer.subscription.updated", "customer.subscription.created"):
+        _sync_subscription_state(obj)
+    elif t == "customer.subscription.deleted":
+        # Subscription fully ended. Keep membership_expires_at as-is so access continues through paid period.
+        _sync_subscription_state(obj)
+        sub_id = obj.get("id")
+        if sub_id:
+            _sync_db.users.update_one(
+                {"stripe_subscription_id": sub_id},
+                {"$set": {"subscription_status": "canceled", "subscription_cancel_at_period_end": False}},
+            )
+    elif t == "invoice.payment_succeeded":
+        # Auto-renewal invoice — refresh subscription state to extend access
+        sub_id = obj.get("subscription")
+        if sub_id:
+            try:
+                sub = stripe.Subscription.retrieve(sub_id)
+                _sync_subscription_state(sub)
+            except stripe.error.StripeError: pass
+    elif t == "invoice.payment_failed":
+        sub_id = obj.get("subscription")
+        if sub_id:
+            _sync_db.users.update_one(
+                {"stripe_subscription_id": sub_id},
+                {"$set": {"subscription_status": "past_due"}},
+            )
     return {"status": "ok"}
 
 @api.get("/")

@@ -134,7 +134,7 @@ export default function Landing() {
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs uppercase tracking-[0.2em] text-honey font-bold">Membership</p>
             <h2 className="mt-3 serif text-4xl sm:text-5xl font-black">One club. Every book. Weekly drops.</h2>
-            <p className="mt-4 text-cream/70">Cancel anytime. Journal & notes stay saved forever, even if you pause.</p>
+            <p className="mt-4 text-cream/70">Cancel future renewals anytime. Your membership remains active through the end of your paid billing period, and your journal and notes remain available in read-only mode while your account stays open.</p>
           </div>
           <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pricing.map((p) => (

@@ -40,6 +40,17 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Password-reset endpoint already invalidates the reset token via `$unset` after a successful reset; single-use guarantee now verified in `test_checkout_regression.py`
 - All 7 launch-readiness checkout scenarios verified end-to-end in iteration_13 (real Stripe test checkout URLs reached for scenarios 1, 2, 6)
 
+## Feb 2026 Update — Manage Membership + Cancellation
+- Added **Manage Membership** button on Dashboard (`dash-manage-membership`) that opens Stripe's hosted Customer Portal — active subscribers can update payment method, view invoices, cancel future renewals
+- Cancellation configured as `cancel_at_period_end: true` — access continues through the paid billing period, then journal/notes flip to read-only while the account stays open
+- "Cancels on [date]" pill (`dash-cancels-on`) shown on Dashboard when cancellation is pending
+- Webhooks expanded: `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed` — auto-renewals extend `membership_expires_at` in sync with Stripe's `current_period_end`
+- Journal POST/DELETE endpoints gated on `has_active_membership` → returns 402 read-only after expiry
+- Pricing tagline updated on Landing + Pricing to explain cancellation semantics
+- Terms → **Refund Policy** section added: 7-day full refund window from initial website purchase; non-refundable after; Etsy purchases follow Etsy listing terms
+- Test suite: 10/10 pass (3 checkout regression + 7 cancellation covering monthly/3month/6month/annual)
+- Production readiness checklist saved to `/app/memory/PRODUCTION_READINESS.md`
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery for drop notifications, receipts, password reset, code delivery
 - **P1**: Push-to-GitHub (requires paid subscription plan)

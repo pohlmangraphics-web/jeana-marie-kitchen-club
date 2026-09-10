@@ -47,8 +47,8 @@ export default function Pricing() {
         <h1 className="serif text-4xl sm:text-5xl font-black text-espresso text-center">
           One club. Every book. Weekly drops.
         </h1>
-        <p className="mt-3 text-center text-muted2 max-w-xl mx-auto">
-          {user ? `Welcome, ${user.family_name}. Pick a plan to activate your family membership.` : "Cancel anytime. Journal & notes stay saved forever."}
+        <p className="mt-3 text-center text-muted2 max-w-2xl mx-auto">
+          {user ? `Welcome, ${user.family_name}. Pick a plan to activate your family membership.` : "Cancel future renewals anytime. Your membership remains active through the end of your paid billing period, and your journal and notes remain available in read-only mode while your account stays open."}
         </p>
 
         <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
