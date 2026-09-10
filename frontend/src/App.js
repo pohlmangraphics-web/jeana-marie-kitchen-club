@@ -22,6 +22,7 @@ import Privacy from "./pages/Privacy";
 import GiftPage from "./pages/Gift";
 import Library from "./pages/Library";
 import Unsubscribe from "./pages/Unsubscribe";
+import Pricing from "./pages/Pricing";
 
 function Protected({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -48,6 +49,7 @@ function App() {
             <Route path="/privacy" element={<Privacy/>}/>
             <Route path="/gift" element={<GiftPage/>}/>
             <Route path="/unsubscribe" element={<Unsubscribe/>}/>
+            <Route path="/pricing" element={<Pricing/>}/>
             <Route path="/payment/success" element={<PaymentSuccess/>}/>
             <Route path="/payment/cancel" element={<PaymentCancel/>}/>
             <Route path="/app" element={<Protected><Dashboard/></Protected>}/>

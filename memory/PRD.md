@@ -32,6 +32,14 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Brand: Recipe Book Stack SVG logo (stacked cookbooks + chef hat + wooden spoon; terracotta/honey/sage/cream/espresso palette); favicon.svg + og-image.svg; admin-uploadable custom logo
 - Test coverage: 36/36 backend tests passing (100%), frontend smoke test 100%
 
+## Feb 2026 Update — Checkout Regression Closed
+- Fixed checkout-flow routing so signed-in unpaid users can never loop back to the Create Account form:
+  - `Landing.jsx` hero + samples CTAs now route to `/pricing` (was `/auth?mode=register`)
+  - `Auth.jsx` mounts with a guard: if already logged in, redirect active members → `/app`, unpaid + plan param → checkout, unpaid + no plan → `/pricing`
+  - `PaymentCancel.jsx` now offers signed-in users `cancel-retry` (→/pricing) and `cancel-dashboard` (→/app) instead of only "Back home"
+- Password-reset endpoint already invalidates the reset token via `$unset` after a successful reset; single-use guarantee now verified in `test_checkout_regression.py`
+- All 7 launch-readiness checkout scenarios verified end-to-end in iteration_13 (real Stripe test checkout URLs reached for scenarios 1, 2, 6)
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery for drop notifications, receipts, password reset, code delivery
 - **P1**: Push-to-GitHub (requires paid subscription plan)

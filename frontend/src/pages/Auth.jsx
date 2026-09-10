@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { api } from "../lib/api";
@@ -10,11 +10,30 @@ export default function Auth() {
   const [mode, setMode] = useState(params.get("mode") === "register" ? "register" : "login");
   const plan = params.get("plan");
   const nav = useNavigate();
-  const { login, register } = useAuth();
+  const { user, loading, login, register } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [familyName, setFamilyName] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Already signed in? Don't show the join/login form — route them appropriately.
+  useEffect(() => {
+    if (loading || !user) return;
+    if (user.role === "admin") { nav("/admin", { replace: true }); return; }
+    if (user.has_active_membership) { nav("/app", { replace: true }); return; }
+    if (plan) {
+      (async () => {
+        try {
+          const { data } = await api.post("/payments/checkout", { lookup_key: plan, origin_url: window.location.origin });
+          window.location.href = data.checkout_url;
+        } catch {
+          nav("/pricing", { replace: true });
+        }
+      })();
+      return;
+    }
+    nav("/pricing", { replace: true });
+  }, [user, loading, plan, nav]);
 
   const submit = async (e) => {
     e.preventDefault();

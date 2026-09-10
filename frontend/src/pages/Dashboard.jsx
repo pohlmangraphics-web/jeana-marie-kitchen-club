@@ -93,7 +93,7 @@ export default function Dashboard() {
             <h1 className="serif text-4xl sm:text-5xl font-black text-espresso mt-1">Who's cooking today?</h1>
           </div>
           {!active && (
-            <Link data-testid="dash-upgrade" to="/#pricing" className="btn-pill btn-primary">Activate Membership</Link>
+            <Link data-testid="dash-upgrade" to="/pricing" className="btn-pill btn-primary">Activate Membership</Link>
           )}
         </div>
 
