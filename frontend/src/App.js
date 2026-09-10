@@ -20,6 +20,9 @@ import FAQ from "./pages/FAQ";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import GiftPage from "./pages/Gift";
+import Library from "./pages/Library";
+import Unsubscribe from "./pages/Unsubscribe";
+import Pricing from "./pages/Pricing";
 
 function Protected({ children, adminOnly }) {
   const { user, loading } = useAuth();
@@ -45,10 +48,13 @@ function App() {
             <Route path="/terms" element={<Terms/>}/>
             <Route path="/privacy" element={<Privacy/>}/>
             <Route path="/gift" element={<GiftPage/>}/>
+            <Route path="/unsubscribe" element={<Unsubscribe/>}/>
+            <Route path="/pricing" element={<Pricing/>}/>
             <Route path="/payment/success" element={<PaymentSuccess/>}/>
             <Route path="/payment/cancel" element={<PaymentCancel/>}/>
             <Route path="/app" element={<Protected><Dashboard/></Protected>}/>
             <Route path="/app/book/:tier" element={<Protected><Book/></Protected>}/>
+            <Route path="/app/library" element={<Protected><Library/></Protected>}/>
             <Route path="/app/recipe/:id" element={<Protected><Recipe/></Protected>}/>
             <Route path="/app/journal" element={<Protected><Journal/></Protected>}/>
             <Route path="/app/printables" element={<Protected><Printables/></Protected>}/>

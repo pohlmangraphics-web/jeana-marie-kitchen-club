@@ -29,7 +29,11 @@ export default function Terms() {
           </div>
           <div>
             <h2 className="serif text-2xl font-bold">Cancellation</h2>
-            <p className="mt-2 text-muted2">Cancel any time. Your notes, favorites and journal entries remain saved in read-only mode. Weekly recipe drops lock until membership is renewed.</p>
+            <p className="mt-2 text-muted2">You can cancel future renewals at any time from <strong>My Kitchen → Manage Membership</strong>. Cancellation is not immediate — your membership remains active through the end of your current paid billing period (monthly, 3-month, 6-month or annual, whichever applies). Once that date passes, your journal, favorites and "We Made This" history remain available in <strong>read-only</strong> mode while your account stays open. You can reactivate any time to resume adding new entries and receiving weekly recipe drops.</p>
+          </div>
+          <div data-testid="terms-refund-policy">
+            <h2 className="serif text-2xl font-bold">Refund Policy</h2>
+            <p className="mt-2 text-muted2">Customers may request a full refund within <strong>7 calendar days</strong> of their initial website membership purchase by contacting support. After 7 days, payments are non-refundable and no partial refunds are provided, except where required by law. Cancelling stops future renewals, while access continues through the paid billing period. Accidental renewal charges reported within 7 days of the renewal date may be reviewed by support on a case-by-case basis. Memberships purchased through Etsy redeem codes are subject to the refund terms displayed on the corresponding Etsy listing, not this policy.</p>
           </div>
           <div>
             <h2 className="serif text-2xl font-bold">Not an Accredited Program</h2>

@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
-import { API } from "../lib/api";
+import { api, API } from "../lib/api";
 import { toast } from "sonner";
 import { Gift, Download, Printer } from "lucide-react";
 
@@ -15,6 +15,11 @@ const DURATIONS = [
 export default function GiftPage() {
   const [form, setForm] = useState({ to: "", from: "", code: "", duration: "annual", message: "" });
   const [busy, setBusy] = useState(false);
+  const [etsyUrl, setEtsyUrl] = useState("https://www.etsy.com/");
+
+  useEffect(() => {
+    api.get("/branding/etsy-url").then(r => { if (r.data.url) setEtsyUrl(r.data.url); }).catch(() => {});
+  }, []);
 
   const download = async () => {
     if (!form.to.trim() || !form.from.trim() || !form.code.trim()) {
@@ -62,7 +67,7 @@ export default function GiftPage() {
                 </div>
               ))}
             </div>
-            <a data-testid="gift-etsy-link" href="https://www.etsy.com/" target="_blank" rel="noreferrer"
+            <a data-testid="gift-etsy-link" href={etsyUrl} target="_blank" rel="noreferrer"
                className="btn-pill btn-primary mt-8 inline-flex">Buy on Etsy →</a>
           </div>
 

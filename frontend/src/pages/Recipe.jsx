@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Nav from "../components/Nav";
-import { api } from "../lib/api";
+import { api, API } from "../lib/api";
 import { toast } from "sonner";
-import { Heart, Check, Clock, Users, Zap, NotebookPen } from "lucide-react";
+import { Heart, Check, Clock, Users, Zap, NotebookPen, Download } from "lucide-react";
 
 export default function Recipe() {
   const { id } = useParams();
@@ -59,9 +59,19 @@ export default function Recipe() {
           <span className="flex items-center gap-2"><Users className="w-4 h-4"/> Serves {r.servings}</span>
         </div>
 
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex gap-3 flex-wrap">
           <button data-testid="fav-btn" onClick={() => fav(false)} className="btn-pill btn-outline !py-2"><Heart className="w-4 h-4"/> Favorite</button>
           <button data-testid="made-btn" onClick={() => fav(true)} className="btn-pill btn-primary !py-2"><Check className="w-4 h-4"/> We Made This</button>
+          {r.recipe_card_file_id && (
+            <button data-testid="recipe-card-download" onClick={async () => {
+              const t = localStorage.getItem("jmk_token");
+              const res = await fetch(`${API}/recipes/${r.id}/card`, { headers: { Authorization: `Bearer ${t}` } });
+              if (!res.ok) return toast.error("Card unavailable");
+              const blob = await res.blob(); const url = URL.createObjectURL(blob);
+              const a = document.createElement("a"); a.href = url; a.download = `${r.title}_Recipe_Card.pdf`; a.click();
+              URL.revokeObjectURL(url);
+            }} className="btn-pill btn-honey !py-2"><Download className="w-4 h-4"/> Download Recipe Card</button>
+          )}
         </div>
 
         <div className="mt-10 grid md:grid-cols-2 gap-10">

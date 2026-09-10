@@ -43,7 +43,7 @@ export default function Landing() {
               Chef Jeana Marie brings more than 30 years of professional cooking experience to your family's kitchen. Every week, members receive age-appropriate recipes, printable learning activities and practical kitchen lessons that help children build confidence and lifelong skills.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
-              <Link data-testid="hero-cta-join" to="/auth?mode=register" className="btn-pill btn-primary">Join the Kitchen Club</Link>
+              <Link data-testid="hero-cta-join" to="/pricing" className="btn-pill btn-primary">Join the Kitchen Club</Link>
               <a data-testid="hero-cta-samples" href="#samples" className="btn-pill btn-outline">Get 3 Free Recipes</a>
             </div>
             <div className="mt-10 flex items-center gap-8 text-sm text-muted2">
@@ -94,7 +94,7 @@ export default function Landing() {
               <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Free Taste</p>
               <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">Three recipes on the house.</h2>
             </div>
-            <Link data-testid="samples-see-all" to="/auth?mode=register" className="btn-pill btn-primary">Unlock the full archive</Link>
+            <Link data-testid="samples-see-all" to="/pricing" className="btn-pill btn-primary">Unlock the full archive</Link>
           </div>
           <div className="mt-12 grid md:grid-cols-3 gap-6">
             {samples.map((r) => (
@@ -134,7 +134,7 @@ export default function Landing() {
           <div className="text-center max-w-2xl mx-auto">
             <p className="text-xs uppercase tracking-[0.2em] text-honey font-bold">Membership</p>
             <h2 className="mt-3 serif text-4xl sm:text-5xl font-black">One club. Every book. Weekly drops.</h2>
-            <p className="mt-4 text-cream/70">Cancel anytime. Journal & notes stay saved forever, even if you pause.</p>
+            <p className="mt-4 text-cream/70">Cancel future renewals anytime. Your membership remains active through the end of your paid billing period, and your journal and notes remain available in read-only mode while your account stays open.</p>
           </div>
           <div className="mt-14 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pricing.map((p) => (
@@ -145,7 +145,7 @@ export default function Landing() {
                   <span className="text-sm opacity-70">.{String(p.amount % 100).padStart(2,'0')}</span>
                 </div>
                 <p className="text-xs mt-1 opacity-70">Billed every {p.interval === "year" ? "year" : p.lookup_key === "monthly" ? "month" : `${p.lookup_key.replace("month"," months")}`}</p>
-                <Link data-testid={`pricing-cta-${p.lookup_key}`} to={`/auth?mode=register&plan=${p.lookup_key}`} className={`mt-6 btn-pill w-full justify-center ${p.lookup_key === "annual" ? "btn-primary" : "btn-honey"}`}>Choose {p.name.split(' ')[0]}</Link>
+                <Link data-testid={`pricing-cta-${p.lookup_key}`} to={`/pricing?plan=${p.lookup_key}`} className={`mt-6 btn-pill w-full justify-center ${p.lookup_key === "annual" ? "btn-primary" : "btn-honey"}`}>Choose {p.name.split(' ')[0]}</Link>
               </div>
             ))}
           </div>
