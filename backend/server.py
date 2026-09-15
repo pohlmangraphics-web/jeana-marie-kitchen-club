@@ -1072,11 +1072,15 @@ async def get_logo_raw():
 
 # --- Stripe Payments ---
 PRICING = {
-    "monthly": {"amount": 999, "interval": "month", "name": "Monthly Membership", "duration": "monthly"},
-    "3month": {"amount": 2699, "interval": "month", "name": "3-Month Membership", "duration": "3month"},
-    "6month": {"amount": 4999, "interval": "month", "name": "6-Month Membership", "duration": "6month"},
-    "annual": {"amount": 8999, "interval": "year", "name": "Annual Membership", "duration": "annual"},
+    "monthly": {"amount": 1099, "interval": "month", "name": "Monthly Membership", "duration": "monthly"},
+    "3month": {"amount": 2799, "interval": "month", "name": "3-Month Membership", "duration": "3month"},
+    "6month": {"amount": 5099, "interval": "month", "name": "6-Month Membership", "duration": "6month"},
+    "annual": {"amount": 9099, "interval": "year", "name": "Annual Membership", "duration": "annual"},
 }
+# App-internal lookup keys → Stripe price lookup keys.
+# The new v2 prices in Stripe use interval_count 1/3/6/1 so Stripe itself computes
+# the correct 30/90/180/365-day billing cadence and renewal dates.
+STRIPE_LOOKUP = {"monthly": "monthly_v2", "3month": "3month_v2", "6month": "6month_v2", "annual": "annual_v2"}
 
 @api.get("/payments/pricing")
 async def get_pricing():
@@ -1085,8 +1089,9 @@ async def get_pricing():
 @api.post("/payments/checkout")
 async def checkout(body: CheckoutReq, user=Depends(get_current_user)):
     if body.lookup_key not in PRICING: raise HTTPException(400, "Invalid plan")
-    prices = stripe.Price.list(lookup_keys=[body.lookup_key], active=True, limit=1).data
-    if not prices: raise HTTPException(500, f"Price not configured: {body.lookup_key}")
+    stripe_key = STRIPE_LOOKUP.get(body.lookup_key, body.lookup_key)
+    prices = stripe.Price.list(lookup_keys=[stripe_key], active=True, limit=1).data
+    if not prices: raise HTTPException(500, f"Price not configured: {stripe_key}")
     price = prices[0]
     kwargs = dict(
         line_items=[{"price": price.id, "quantity": 1}],
@@ -1175,11 +1180,21 @@ def _attach_customer_and_subscription(user_id: Optional[str], customer_id: Optio
             sub = stripe.Subscription.retrieve(subscription_id)
             upd["subscription_status"] = sub.get("status")
             upd["subscription_cancel_at_period_end"] = bool(sub.get("cancel_at_period_end"))
-            cpe = sub.get("current_period_end")
+            cpe = _sub_period_end(sub)
             if cpe: upd["subscription_current_period_end"] = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat()
         except stripe.error.StripeError: pass
     if upd:
         _sync_db.users.update_one({"id": user_id}, {"$set": upd})
+
+def _sub_period_end(sub) -> Optional[int]:
+    """Read current_period_end from subscription (Stripe API 2025+ moved it to items)."""
+    v = sub.get("current_period_end") if hasattr(sub, "get") else None
+    if v: return v
+    try:
+        items = sub["items"]["data"] if hasattr(sub, "__getitem__") else sub.get("items", {}).get("data", [])
+        if items: return items[0].get("current_period_end")
+    except Exception: pass
+    return None
 
 def _sync_subscription_state(sub: dict):
     """Persist subscription changes (cancel_at_period_end, current_period_end, status) to the user doc.
@@ -1195,7 +1210,7 @@ def _sync_subscription_state(sub: dict):
         "subscription_status": sub.get("status"),
         "subscription_cancel_at_period_end": bool(sub.get("cancel_at_period_end")),
     }
-    cpe = sub.get("current_period_end")
+    cpe = _sub_period_end(sub)
     if cpe:
         iso = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat()
         upd["subscription_current_period_end"] = iso

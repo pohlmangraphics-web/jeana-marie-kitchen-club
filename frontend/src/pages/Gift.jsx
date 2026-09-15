@@ -6,10 +6,10 @@ import { toast } from "sonner";
 import { Gift, Download, Printer } from "lucide-react";
 
 const DURATIONS = [
-  { key: "monthly", label: "1 Month", price: "$9.99" },
-  { key: "3month", label: "3 Months", price: "$26.99" },
-  { key: "6month", label: "6 Months", price: "$49.99" },
-  { key: "annual", label: "1 Year", price: "$89.99" },
+  { key: "monthly", label: "1 Month", price: "$10.99" },
+  { key: "3month", label: "3 Months", price: "$27.99" },
+  { key: "6month", label: "6 Months", price: "$50.99" },
+  { key: "annual", label: "1 Year", price: "$90.99" },
 ];
 
 export default function GiftPage() {

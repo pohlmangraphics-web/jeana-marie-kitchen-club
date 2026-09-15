@@ -51,6 +51,19 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Test suite: 10/10 pass (3 checkout regression + 7 cancellation covering monthly/3month/6month/annual)
 - Production readiness checklist saved to `/app/memory/PRODUCTION_READINESS.md`
 
+## Feb 2026 Update — Price Ladder v2 + Correct Billing Intervals
+- New prices created in Stripe sandbox (old ones archived, not deleted):
+  - `monthly_v2` — $10.99 / every 1 month (`price_1UFjoNDSAOqytspja9sD02U3`)
+  - `3month_v2` — $27.99 / every 3 months (`price_1UFjoNDSAOqytspjG48b9xlu`) — **fixes prior 1-month interval bug**
+  - `6month_v2` — $50.99 / every 6 months (`price_1UFjoODSAOqytspjuideALdE`) — **fixes prior 1-month interval bug**
+  - `annual_v2` — $90.99 / every 1 year (`price_1UFjoODSAOqytspjGqodaF1p`)
+- Added `STRIPE_LOOKUP` map in `server.py` so the app's internal keys (`monthly`/`3month`/`6month`/`annual`) point to the new Stripe lookup_keys; all downstream references (`Gift.jsx`, Admin, redeem codes, `_grant_membership`) keep working unchanged
+- Fixed pricing display bug: `.toFixed(0)` was rounding $10.99 → "$11.99"; replaced with `Math.floor()` in Landing.jsx and Pricing.jsx
+- Updated `_sync_subscription_state` to read `current_period_end` from `subscription.items[0]` (Stripe API 2025+ moved it off the top-level object)
+- Verified renewal cadence end-to-end via live Stripe sandbox subscriptions: monthly=30d, 3month=91d, 6month=181d, annual=365d — all four `PASS`
+- Old prices ($9.99/$26.99/$49.99/$89.99) archived with renamed lookup keys (`monthly_archived_v1` etc.) to preserve any historical subscriptions still billing at legacy rates
+- **NOT deployed. Sandbox test mode only. No live activation.**
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery for drop notifications, receipts, password reset, code delivery
 - **P1**: Push-to-GitHub (requires paid subscription plan)

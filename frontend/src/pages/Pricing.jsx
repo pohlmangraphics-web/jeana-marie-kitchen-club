@@ -59,7 +59,7 @@ export default function Pricing() {
                 className={`rounded-2xl p-6 border-2 ${highlight ? "bg-honey text-espresso border-honey" : "bg-cream border-espresso/10"}`}>
                 <p className="text-xs uppercase tracking-widest font-bold">{p.name}</p>
                 <div className="mt-3 flex items-baseline gap-1">
-                  <span className="text-5xl font-black">${(p.amount / 100).toFixed(0)}</span>
+                  <span className="text-5xl font-black">${Math.floor(p.amount / 100)}</span>
                   <span className="text-sm opacity-70">.{String(p.amount % 100).padStart(2, "0")}</span>
                 </div>
                 <p className="text-xs mt-1 opacity-70">
