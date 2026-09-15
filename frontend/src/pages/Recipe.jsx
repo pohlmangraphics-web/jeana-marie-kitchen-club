@@ -48,10 +48,10 @@ export default function Recipe() {
           </button>
         </div>
 
-        {r.photo_url && <img src={r.photo_url} alt="" className="mt-6 w-full h-80 object-cover rounded-2xl"/>}
+        {r.photo_url && <img src={r.photo_url} alt="" className="mt-6 w-full aspect-[16/7] object-cover object-[center_40%] rounded-2xl"/>}
 
         <p className="mt-6 text-xs uppercase tracking-widest text-sage font-bold">{r.homeschool_topic}</p>
-        <h1 className="serif text-4xl sm:text-6xl font-black text-espresso">{r.title}</h1>
+        <h1 className="serif text-[32px] sm:text-[38px] lg:text-[48px] font-black text-espresso leading-[1.1]">{r.title}</h1>
         <p className="mt-4 text-lg text-muted2">{r.description}</p>
 
         <div className="mt-6 flex flex-wrap gap-6 text-sm text-muted2">
