@@ -959,6 +959,11 @@ async def get_featured_admin(admin=Depends(require_admin)):
     doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
     return (doc or {}).get("value", {})
 
+@api.get("/admin/email/status")
+async def admin_email_status(admin=Depends(require_admin)):
+    return Response(content=json.dumps(email_service.email_status()), media_type="application/json",
+                    headers={"Cache-Control": "no-store", "Pragma": "no-cache"})
+
 # --- Bulk print unredeemed codes ---
 @api.get("/admin/codes/print-sheet.pdf")
 async def codes_print_sheet(admin=Depends(require_admin)):

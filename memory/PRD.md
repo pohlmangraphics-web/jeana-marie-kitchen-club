@@ -64,8 +64,16 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Old prices ($9.99/$26.99/$49.99/$89.99) archived with renamed lookup keys (`monthly_archived_v1` etc.) to preserve any historical subscriptions still billing at legacy rates
 - **NOT deployed. Sandbox test mode only. No live activation.**
 
+## Jun 2026 Update — Feature-Flagged BYO Resend (Preview only, NOT active)
+- `resend==2.46.0` pinned in requirements.txt
+- backend/.env: `USE_RESEND=false`, `RESEND_FROM_EMAIL=hello@club.jeanamarieprivatechef.com`, `RESEND_API_KEY=` (empty — user pastes privately via workspace editor; Secrets UI governs Live only, not Preview)
+- `email_service.py`: `send_email` routes to Resend only when `USE_RESEND=true` AND key present AND from-email set; From = "Jeana Marie's Kitchen Club <hello@…>", reply-to preserved; falls back to Emergent-managed path only on definitive 4xx rejection (not 429/5xx/timeout, to avoid duplicates). Templates/guardrails unchanged.
+- `GET /api/admin/email/status` (admin-only, Cache-Control: no-store) → booleans `use_resend`, `resend_key_present`, `resend_active`, plus `provider_in_use`. Never returns/logs secret values.
+- Verified: dispatch logic (off / on-no-key / on / reject-fallback / timeout-no-fallback), 401/403 gating, .env gitignored. No emails sent.
+- Next: user pastes key → restart backend → status shows key_present → flip `USE_RESEND=true` in preview → one test password-reset → flip back.
+
 ## Backlog (P1/P2)
-- **P1**: Resend email delivery for drop notifications, receipts, password reset, code delivery
+- **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)
 - **P1**: Custom domain (club.JeanaMariePrivateChef.com) via Entri
 - **P2**: PWA install prompt (flag ready)

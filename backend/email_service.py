@@ -3,6 +3,7 @@ All templates are server-side; callers pass IDs and typed args, never markup.
 Follows email guardrails G1-G5."""
 import os
 import re
+import asyncio
 import ipaddress
 import logging
 import httpx
@@ -73,8 +74,50 @@ def _assert_safe_email(subject: str, html: str) -> None:
             if not _same_site(m.group(1).lower(), real):
                 raise ValueError(f"Anchor text {m.group(1)!r} != real link host {real!r} (G3)")
 
+def _use_resend() -> bool: return os.environ.get("USE_RESEND", "false").strip().lower() == "true"
+def _resend_key_present() -> bool: return bool(os.environ.get("RESEND_API_KEY", "").strip())
+def _resend_from() -> str: return os.environ.get("RESEND_FROM_EMAIL", "").strip()
+def resend_active() -> bool: return _use_resend() and _resend_key_present() and bool(_resend_from())
+
+def email_status() -> dict:
+    return {"use_resend": _use_resend(), "resend_key_present": _resend_key_present(),
+            "resend_active": resend_active(), "provider_in_use": "resend" if resend_active() else "emergent"}
+
+class _ResendRejected(Exception):
+    """Definitive rejection from Resend (4xx) — safe to fall back without duplicate risk."""
+
+async def _send_via_resend(*, to: str, subject: str, html: str) -> str | None:
+    import resend
+    resend.api_key = os.environ["RESEND_API_KEY"]
+    params = {"from": f"{_from_name()} <{_resend_from()}>", "to": [to], "subject": subject, "html": html}
+    rt = _reply_to()
+    if rt: params["reply_to"] = rt
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, params)
+        return (result or {}).get("id")
+    except resend.exceptions.ResendError as e:
+        code = getattr(e, "code", None)
+        try: code = int(code)
+        except (TypeError, ValueError): code = None
+        logger.error(f"Resend rejected email: status={code} type={getattr(e, 'error_type', 'unknown')}")
+        if code is not None and 400 <= code < 500 and code != 429:
+            raise _ResendRejected()
+        raise HTTPException(status_code=502, detail="Failed to send email")
+    except HTTPException: raise
+    except Exception as e:
+        logger.error(f"Resend transport error ({type(e).__name__}); not falling back to avoid duplicates")
+        raise HTTPException(status_code=502, detail="Failed to send email")
+
 async def send_email(*, to: str, subject: str, html: str) -> str | None:
     _assert_safe_email(subject, html)
+    if resend_active():
+        try:
+            return await _send_via_resend(to=to, subject=subject, html=html)
+        except _ResendRejected:
+            logger.warning("Falling back to Emergent-managed email after definitive Resend rejection")
+    return await _send_via_emergent(to=to, subject=subject, html=html)
+
+async def _send_via_emergent(*, to: str, subject: str, html: str) -> str | None:
     payload = {"to": [to], "subject": subject, "html": html, "from_name": _from_name()}
     rt = _reply_to()
     if rt: payload["contact_email"] = rt
