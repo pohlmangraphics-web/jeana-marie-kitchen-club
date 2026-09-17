@@ -112,10 +112,14 @@ async def send_email(*, to: str, subject: str, html: str) -> str | None:
     _assert_safe_email(subject, html)
     if resend_active():
         try:
-            return await _send_via_resend(to=to, subject=subject, html=html)
+            mid = await _send_via_resend(to=to, subject=subject, html=html)
+            logger.info(f"Email accepted by provider=resend id={mid}")
+            return mid
         except _ResendRejected:
             logger.warning("Falling back to Emergent-managed email after definitive Resend rejection")
-    return await _send_via_emergent(to=to, subject=subject, html=html)
+    mid = await _send_via_emergent(to=to, subject=subject, html=html)
+    logger.info(f"Email accepted by provider=emergent id={mid}")
+    return mid
 
 async def _send_via_emergent(*, to: str, subject: str, html: str) -> str | None:
     payload = {"to": [to], "subject": subject, "html": html, "from_name": _from_name()}
