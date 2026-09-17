@@ -53,3 +53,8 @@ test-reports/
 # Generated PDFs / uploads (served from Object Storage)
 uploads/
 *.pdf.tmp
+*.env
+credentials.json
+*.pem
+*.key
+.credentials
