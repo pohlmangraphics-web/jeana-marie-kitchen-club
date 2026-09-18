@@ -86,15 +86,42 @@ def test_live_unauthenticated_401_and_non_admin_403():
 
 
 @pytest.mark.anyio
-async def test_recipient_is_admin_and_cannot_be_overridden(sent):
+async def test_recipient_is_configured_and_cannot_be_overridden(sent, monkeypatch):
+    monkeypatch.setenv("WEEKLY_DROP_PREVIEW_EMAIL", "pohlmangraphics@gmail.com")
     tok = _live_token(ADMIN)
-    r = await _post(tok, {"to": "attacker@example.com", "email": "x@example.com", "recipient": "y@example.com"})
+    async with AsyncClient(transport=ASGITransport(app=server.app), base_url="http://test") as c:
+        r = await c.post("/api/admin/email/weekly-drop/preview?to=attacker@example.com&recipient=z@example.com",
+                         headers={"Authorization": f"Bearer {tok}"},
+                         json={"to": "attacker@example.com", "email": "x@example.com", "recipient": "y@example.com"})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["recipient"] == ADMIN["email"] and sent[0]["to"] == ADMIN["email"]
-    assert "attacker" not in sent[0]["to"]
+    assert body["recipient"] == "pohlmangraphics@gmail.com" and sent[0]["to"] == "pohlmangraphics@gmail.com"
+    assert "attacker" not in sent[0]["to"] and "example.com" not in sent[0]["to"]
     assert set(body) == {"ok", "provider", "message_id", "recipient", "recipe"}
     assert body["provider"] == "resend" and body["message_id"] == "fake-1"
+
+
+@pytest.mark.anyio
+async def test_recipient_falls_back_to_admin_when_unconfigured(sent, monkeypatch):
+    monkeypatch.delenv("WEEKLY_DROP_PREVIEW_EMAIL", raising=False)
+    r = await _post(_live_token(ADMIN), {"to": "attacker@example.com"})
+    assert r.status_code == 200 and r.json()["recipient"] == ADMIN["email"] and sent[0]["to"] == ADMIN["email"]
+    monkeypatch.setenv("WEEKLY_DROP_PREVIEW_EMAIL", "   ")
+    r = await _post(_live_token(ADMIN))
+    assert r.json()["recipient"] == ADMIN["email"]
+
+
+@pytest.mark.anyio
+async def test_preview_recipient_endpoint_matches_send(sent, monkeypatch):
+    tok = _live_token(ADMIN)
+    async with AsyncClient(transport=ASGITransport(app=server.app), base_url="http://test") as c:
+        assert (await c.get("/api/admin/email/weekly-drop/preview-recipient")).status_code in (401, 403)
+        monkeypatch.setenv("WEEKLY_DROP_PREVIEW_EMAIL", "pohlmangraphics@gmail.com")
+        g = await c.get("/api/admin/email/weekly-drop/preview-recipient", headers={"Authorization": f"Bearer {tok}"})
+        assert g.status_code == 200 and g.json() == {"recipient": "pohlmangraphics@gmail.com"}
+        monkeypatch.delenv("WEEKLY_DROP_PREVIEW_EMAIL")
+        g = await c.get("/api/admin/email/weekly-drop/preview-recipient", headers={"Authorization": f"Bearer {tok}"})
+        assert g.json() == {"recipient": ADMIN["email"]}
 
 
 @pytest.mark.anyio

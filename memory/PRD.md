@@ -88,6 +88,7 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - `email_service.dispatch_email()` now the single production dispatcher; `send_email` wraps it.
 - UI: `WeeklyDropPreviewButton` next to "Send weekly drop email" in Admin → Recipes → Pick of the Week (confirm shows admin email, busy state, provider in success toast, friendly errors).
 - Tests: `backend/tests/test_weekly_drop_preview.py` 7/7 (in-process ASGI, dispatcher mocked), `WeeklyDropPreviewButton.test.jsx` 4/4; frontend total 17/17. One real preview sent via Resend (id 01a0b5be-…).
+- Recipient: `WEEKLY_DROP_PREVIEW_EMAIL` (Preview .env = pohlmangraphics@gmail.com) when set, else admin's email; never from request. `GET /api/admin/email/weekly-drop/preview-recipient` feeds the confirm dialog. Tests 9/9 backend, 6/6 component (frontend 19/19).
 
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI

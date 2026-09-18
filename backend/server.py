@@ -331,15 +331,23 @@ async def _resolve_weekly_drop_recipe() -> dict:
     if not r: raise HTTPException(400, "No recipe available to announce")
     return r
 
+def _preview_recipient(admin: dict) -> str:
+    return os.environ.get("WEEKLY_DROP_PREVIEW_EMAIL", "").strip().lower() or admin["email"]
+
+@api.get("/admin/email/weekly-drop/preview-recipient")
+async def get_weekly_drop_preview_recipient(admin=Depends(require_admin)):
+    return {"recipient": _preview_recipient(admin)}
+
 @api.post("/admin/email/weekly-drop/preview")
 async def send_weekly_drop_preview(admin=Depends(require_admin)):
     rate_limit(f"drop-preview:{admin['id']}", 5, 3600)
     r = await _resolve_weekly_drop_recipe()
+    to = _preview_recipient(admin)
     result = await email_service.send_weekly_drop_preview(
-        to=admin["email"], family_name=admin.get("family_name") or "Jeana",
+        to=to, family_name=admin.get("family_name") or "Jeana",
         recipe_title=r["title"], recipe_id=r["id"])
     return {"ok": True, "provider": result["provider"], "message_id": result["id"],
-            "recipient": admin["email"], "recipe": r["title"]}
+            "recipient": to, "recipe": r["title"]}
 
 @api.post("/admin/email/weekly-drop")
 async def send_weekly_drop_broadcast(admin=Depends(require_admin)):
