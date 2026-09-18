@@ -1,0 +1,38 @@
+{
+  "summary": "Iteration 14 — Recipe Card PDF validation bug verified end-to-end. Backend pytest test_recipe_card.py: 6/6 PASS (upload rejects stub/text/empty → 422; valid one-page PDF upload+attach+download returns 200 %PDF with attachment disposition; legacy stub in storage → GET card returns 422 'valid PDF'; missing storage object → 404; auth matrix 401/402/200; live Rainbow Fruit Kabobs (Copy) id a3f29d4d... GET card returns 422). Frontend UI: on the actual Kabobs (Copy) recipe page as admin, click Download Recipe Card → NO new tab opened, sonner toast \"This recipe card isn't a valid PDF yet. Please check back soon.\" shown, button briefly says Preparing… then returns to Download Recipe Card. Route-intercept mocks: 402 → 'Recipe cards are for active members...' toast; 404 → \"This recipe card isn't available right now.\" toast; 200 with body 'not a pdf' → client-side %PDF header check fires the same 'valid PDF' toast. Admin Recipes tab upload via [data-testid=admin-recipe-card] with the 45-byte stub → toast 'Recipe card must be a valid PDF with at least one page' (surfacing server 422 detail). Regression: recipe page h1 renders title, weekly-drop 'Send preview to me' button present in admin Recipes tab, Flags tab still shows 'Email: Resend' indicator. Kabobs recipe records untouched, no emails triggered.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "fix_applied_by_tester": {
+    "file": "/app/frontend/src/pages/Recipe.jsx",
+    "issue": "Duplicate `const [cardBusy, setCardBusy] = useState(false);` declaration on lines 12 and 13 caused webpack Syntax error 'Identifier cardBusy has already been declared (13:9)'. The ENTIRE frontend was failing to compile — every route would have been broken for users. Removed the duplicate line; webpack now compiles cleanly (1 warning, 0 errors). Root cause: likely a bad merge / edit that pasted the useState line twice when adding the busy state.",
+    "impact_if_not_fixed": "Frontend totally down; no recipe page (or any page) would render for anyone.",
+    "priority": "CRITICAL"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_recipe_card.py",
+    "/app/test_reports/pytest/iter14_recipe_card.xml"
+  ],
+  "action_items": [
+    "Main agent: acknowledge the duplicate-useState fix in Recipe.jsx. Ensure your local edits don't reintroduce it. Consider adding an ESLint 'no-redeclare' rule or a pre-commit check — this was a build-breaker that shipped in the last patch.",
+    "Minor code review nit: Recipe.jsx effect depends on [id, kitchen] but the wake-lock branch inside the effect only makes sense when kitchen is true; fine as-is but grouping in a separate effect would be cleaner."
+  ],
+  "critical_code_review_comments": [
+    "server.py _pdf_page_count/upload/get_recipe_card path is solid: rejects stub PDFs at both upload (422) and download (422) time, and the auth ordering 401→402→404→422 matches the frontend's toast copy exactly.",
+    "Recipe.jsx downloadCard() does a defensive client-side %PDF-header check on the blob — good belt-and-suspenders in case a proxy strips the 422 or a legacy stub sneaks through. Consider also verifying blob.type startsWith 'application/pdf' before creating the object URL.",
+    "Admin.jsx uploadFile toast surfaces err.response.data.detail — good; keep this pattern for all upload variants."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/Recipe.jsx"
+  ],
+  "success_rate": {"backend": "100% (6/6 pytest)", "frontend": "100% (7/7 scenarios: happy path, 3 mocked error codes, admin upload rejection, 2 regression checks)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! (used); demo@family.com / DemoFamily123! (not needed this run)",
+  "seed_data_creation": "test_recipe_card.py auto-creates & tears down a TEST Card Recipe {uuid} and any db.files docs with original_filename starting TEST_ (fixtures scope=module with teardown). No stray artifacts. Rainbow Fruit Kabobs (Copy) recipe id a3f29d4d-16ce-4273-8da7-0c26db31e91a and its 45-byte stub card file were read but NOT modified — required to keep as the reproduction case.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Recipe-card PDF validation feature is fully verified. Regression file: /app/backend/tests/test_recipe_card.py (6 tests, ~6.75s). Note the CRITICAL find: Recipe.jsx had a duplicate useState declaration that was silently failing every frontend build. If a similar 'nothing loads' report comes in, always start by tailing /var/log/supervisor/frontend.out.log for 'Failed to compile' before assuming a runtime issue. The auth-token localStorage key is jmk_token; onboarding-tour dismissal key is jmk_onboarded='done'.",
+  "rca of the issue": "REPORTED BUG (recipe card download opens a broken browser PDF viewer): backend fix (_pdf_page_count + upload/download validation) is correct and tests all pass. However a second, unshipped-but-critical bug was introduced in the same patch — /app/frontend/src/pages/Recipe.jsx contained the line `const [cardBusy, setCardBusy] = useState(false);` twice back-to-back (lines 12 & 13). Webpack errored with 'Identifier cardBusy has already been declared (13:9)' and the compiled bundle refused to load Recipe.jsx AND every other route in the SPA. Fixed by removing the duplicate line. Webpack now compiles; all UI scenarios verified pass."
+}

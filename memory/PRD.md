@@ -91,6 +91,10 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Recipient: `WEEKLY_DROP_PREVIEW_EMAIL` (Preview .env = pohlmangraphics@gmail.com) when set, else admin's email; never from request. `GET /api/admin/email/weekly-drop/preview-recipient` feeds the confirm dialog. Tests 9/9 backend, 6/6 component (frontend 19/19).
 - "Open the recipe" failure RCA: link/ID were correct; recipient session (pohlmangraphics@gmail.com, family, no membership) got 402 → Recipe.jsx showed generic "Cannot load recipe". Fixes: `email_service.recipe_link()` shared builder (https APP_PUBLIC_URL + `/app/recipe/:id`), resolver `_recipe_available()` (exists, titled, published_at ≤ now) for preview + broadcast, template sentence "Hi {name}, this week's Kitchen Club pick is ready:", Recipe.jsx error states (402 → membership panel → /pricing; 404 → not found; other → generic). Tests 12/12 backend. featured_recipe still unset (fallback picks newest: "Rainbow Fruit Kabobs (Copy)" a3f29d4d…; original 502ef474…).
 
+## Jun 2026 Update — Recipe-card PDF validation (iteration_14 PASS)
+- RCA: "Rainbow Fruit Kabobs (Copy)" card = 45-byte zero-page stub (`%PDF-1.4 1 0 obj<<>>endobj trailer<<>> %%EOF`) from test_iteration7; all 10 `recipe_card` file records are 44–45 B stubs. Download returned 200/application/pdf/45 B → browser "0 of 0". Original "Rainbow Fruit Kabobs" (502ef474…) has no card and IS in the admin list; only the Copy is "Jeana's Pick" because featured_recipe is unset and fallback = newest.
+- Fix: `pypdf` (6.19.0) `_pdf_page_count()`; upload (purpose=recipe_card) → 422 if 0 pages; download → 422 for stub/corrupt, 404 missing object; frontend friendly toasts (402/404/422/generic + client %PDF check), busy state; admin upload surfaces server message. Tests `backend/tests/test_recipe_card.py` 6/6. Kabobs records untouched — replacement PDF must be uploaded by admin via Edit → Replace PDF.
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

@@ -10,7 +10,6 @@ export default function Recipe() {
   const [r, setR] = useState(null);
   const [err, setErr] = useState(null);
   const [cardBusy, setCardBusy] = useState(false);
-  const [cardBusy, setCardBusy] = useState(false);
   const [kitchen, setKitchen] = useState(false);
   const [note, setNote] = useState("");
   const profile = JSON.parse(localStorage.getItem("jmk_profile") || "null");
