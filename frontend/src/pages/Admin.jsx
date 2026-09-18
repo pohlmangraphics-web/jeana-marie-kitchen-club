@@ -42,7 +42,11 @@ async function uploadFile(file, purpose) {
   const fd = new FormData(); fd.append("file", file); fd.append("purpose", purpose);
   const t = localStorage.getItem("jmk_token");
   const res = await fetch(`${API}/files/upload`, { method: "POST", headers: { Authorization: `Bearer ${t}` }, body: fd });
-  if (!res.ok) throw new Error("Upload failed");
+  if (!res.ok) {
+    let detail = "Upload failed";
+    try { const j = await res.json(); if (typeof j.detail === "string") detail = j.detail; } catch {}
+    throw new Error(detail);
+  }
   return res.json();
 }
 
@@ -146,7 +150,7 @@ function RecipesAdmin() {
     const file = e.target.files?.[0]; if (!file) return;
     setBusy(true);
     try { const r = await uploadFile(file, "recipe_card"); setF({...f, recipe_card_file_id: r.file_id}); toast.success("Recipe card uploaded"); }
-    catch { toast.error("Card upload failed"); }
+    catch (e) { toast.error(e?.message || "Card upload failed"); }
     finally { setBusy(false); }
   };
   const removeCard = () => setF({...f, recipe_card_file_id: null});

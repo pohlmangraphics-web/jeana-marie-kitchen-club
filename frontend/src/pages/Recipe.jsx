@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Nav from "../components/Nav";
-import { api, API } from "../lib/api";
+import { api } from "../lib/api";
 import { toast } from "sonner";
 import { Heart, Check, Clock, Users, Zap, NotebookPen, Download } from "lucide-react";
 
@@ -9,6 +9,8 @@ export default function Recipe() {
   const { id } = useParams();
   const [r, setR] = useState(null);
   const [err, setErr] = useState(null);
+  const [cardBusy, setCardBusy] = useState(false);
+  const [cardBusy, setCardBusy] = useState(false);
   const [kitchen, setKitchen] = useState(false);
   const [note, setNote] = useState("");
   const profile = JSON.parse(localStorage.getItem("jmk_profile") || "null");
@@ -37,6 +39,30 @@ export default function Recipe() {
     await api.post("/journal", { profile_id: profile.id, recipe_id: id, title: `Note: ${r.title}`, notes: note });
     setNote("");
     toast.success("Saved to your journal");
+  };
+
+  const downloadCard = async () => {
+    if (cardBusy) return;
+    setCardBusy(true);
+    try {
+      const res = await api.get(`/recipes/${r.id}/card`, { responseType: "blob" });
+      const blob = res.data;
+      const head = new TextDecoder().decode(new Uint8Array(await blob.slice(0, 5).arrayBuffer()));
+      if (!head.startsWith("%PDF") || blob.size < 100) {
+        toast.error("This recipe card isn't a valid PDF yet. Please check back soon.");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `${r.title}_Recipe_Card.pdf`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const status = err?.response?.status;
+      let msg = "Couldn't download the recipe card. Please try again.";
+      if (status === 402) msg = "Recipe cards are for active members. See membership options to unlock them.";
+      else if (status === 404) msg = "This recipe card isn't available right now.";
+      else if (status === 422) msg = "This recipe card isn't a valid PDF yet. Please check back soon.";
+      toast.error(msg);
+    } finally { setCardBusy(false); }
   };
 
   if (err) {
@@ -86,14 +112,8 @@ export default function Recipe() {
           <button data-testid="fav-btn" onClick={() => fav(false)} className="btn-pill btn-outline !py-2"><Heart className="w-4 h-4"/> Favorite</button>
           <button data-testid="made-btn" onClick={() => fav(true)} className="btn-pill btn-primary !py-2"><Check className="w-4 h-4"/> We Made This</button>
           {r.recipe_card_file_id && (
-            <button data-testid="recipe-card-download" onClick={async () => {
-              const t = localStorage.getItem("jmk_token");
-              const res = await fetch(`${API}/recipes/${r.id}/card`, { headers: { Authorization: `Bearer ${t}` } });
-              if (!res.ok) return toast.error("Card unavailable");
-              const blob = await res.blob(); const url = URL.createObjectURL(blob);
-              const a = document.createElement("a"); a.href = url; a.download = `${r.title}_Recipe_Card.pdf`; a.click();
-              URL.revokeObjectURL(url);
-            }} className="btn-pill btn-honey !py-2"><Download className="w-4 h-4"/> Download Recipe Card</button>
+            <button data-testid="recipe-card-download" onClick={downloadCard} disabled={cardBusy} aria-busy={cardBusy}
+              className="btn-pill btn-honey !py-2 disabled:opacity-60"><Download className="w-4 h-4"/> {cardBusy ? "Preparing…" : "Download Recipe Card"}</button>
           )}
         </div>
 

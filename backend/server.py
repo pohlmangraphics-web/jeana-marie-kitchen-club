@@ -94,6 +94,15 @@ async def require_admin(user=Depends(get_current_user)):
     if user.get("role") != "admin": raise HTTPException(403, "Admin only")
     return user
 
+def _pdf_page_count(data: bytes) -> int:
+    """Pages in a PDF, or 0 if the bytes are not a readable PDF with at least one page."""
+    if not data.startswith(b"%PDF"): return 0
+    try:
+        from pypdf import PdfReader
+        return len(PdfReader(io.BytesIO(data), strict=False).pages)
+    except Exception:
+        return 0
+
 def has_active_membership(user: dict) -> bool:
     if user.get("role") == "admin": return True
     exp = user.get("membership_expires_at")
@@ -409,6 +418,8 @@ async def upload_file(file: UploadFile = File(...), purpose: str = Form("misc"),
     data = await file.read()
     if len(data) > 8 * 1024 * 1024:
         raise HTTPException(413, "File too large (max 8MB)")
+    if purpose == "recipe_card" and _pdf_page_count(data) == 0:
+        raise HTTPException(422, "Recipe card must be a valid PDF with at least one page")
 
     ext = (file.filename or "bin").rsplit(".", 1)[-1].lower()[:8]
     file_id = uid()
@@ -570,8 +581,14 @@ async def get_recipe_card(rid: str, user=Depends(get_current_user)):
         raise HTTPException(404, "No recipe card attached")
     rec = await db.files.find_one({"id": r["recipe_card_file_id"], "is_deleted": False}, {"_id": 0})
     if not rec: raise HTTPException(404, "File missing")
-    data, ctype = get_object(rec["storage_path"])
-    return Response(content=data, media_type=rec.get("content_type") or ctype or "application/pdf",
+    try:
+        data, ctype = get_object(rec["storage_path"])
+    except Exception as e:
+        logging.error(f"Recipe card object fetch failed for recipe {rid}: {type(e).__name__}")
+        raise HTTPException(404, "File missing")
+    if not data or _pdf_page_count(data) == 0:
+        raise HTTPException(422, "Recipe card file is not a valid PDF. Please upload a replacement.")
+    return Response(content=data, media_type="application/pdf",
                     headers={"Content-Disposition": f'attachment; filename="{r["title"].replace(" ","_")}_Recipe_Card.pdf"'})
 
 # --- Favorites / Made ---
