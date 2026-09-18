@@ -320,15 +320,23 @@ async def unsubscribe(token: str):
     await db.users.update_one({"id": user["id"]}, {"$set": {"email_optin_weekly": False}})
     return {"ok": True, "message": "You have been unsubscribed from weekly recipe emails."}
 
+def _recipe_available(r: dict | None) -> bool:
+    """Exists, has an id/title, and is published (published_at <= now)."""
+    if not r or not r.get("id") or not r.get("title"): return False
+    pub = r.get("published_at")
+    if not pub: return False
+    try: return datetime.fromisoformat(pub) <= datetime.now(timezone.utc)
+    except Exception: return False
+
 async def _resolve_weekly_drop_recipe() -> dict:
-    """Selected featured recipe, else newest published non-sample. Shared by broadcast + admin preview."""
+    """Selected featured recipe if available, else newest published non-sample. Shared by broadcast + admin preview."""
     doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
     rid = ((doc or {}).get("value") or {}).get("recipe_id")
-    r = None
-    if rid: r = await db.recipes.find_one({"id": rid}, {"_id": 0})
-    if not r:
-        r = await db.recipes.find_one({"is_sample": {"$ne": True}}, {"_id": 0}, sort=[("published_at", -1)])
-    if not r: raise HTTPException(400, "No recipe available to announce")
+    r = await db.recipes.find_one({"id": rid}, {"_id": 0}) if rid else None
+    if not _recipe_available(r):
+        r = await db.recipes.find_one(
+            {"is_sample": {"$ne": True}, "published_at": {"$lte": now_iso()}}, {"_id": 0}, sort=[("published_at", -1)])
+    if not _recipe_available(r): raise HTTPException(400, "No published recipe available to announce")
     return r
 
 def _preview_recipient(admin: dict) -> str:

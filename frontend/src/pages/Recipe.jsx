@@ -8,12 +8,17 @@ import { Heart, Check, Clock, Users, Zap, NotebookPen, Download } from "lucide-r
 export default function Recipe() {
   const { id } = useParams();
   const [r, setR] = useState(null);
+  const [err, setErr] = useState(null);
   const [kitchen, setKitchen] = useState(false);
   const [note, setNote] = useState("");
   const profile = JSON.parse(localStorage.getItem("jmk_profile") || "null");
 
   useEffect(() => {
-    api.get(`/recipes/${id}`).then(res => setR(res.data)).catch(() => toast.error("Cannot load recipe"));
+    setErr(null);
+    api.get(`/recipes/${id}`).then(res => setR(res.data)).catch((e) => {
+      const status = e?.response?.status;
+      setErr(status === 402 ? "membership" : status === 404 ? "notfound" : "generic");
+    });
     if (kitchen) {
       // try to keep screen on
       if (navigator.wakeLock) navigator.wakeLock.request("screen").catch(() => {});
@@ -34,6 +39,24 @@ export default function Recipe() {
     toast.success("Saved to your journal");
   };
 
+  if (err) {
+    const copy = {
+      membership: { title: "This recipe is for Kitchen Club members", body: "Your account doesn't have an active membership yet. Join the club to open this week's pick and the full recipe library.", cta: "See membership options", to: "/pricing" },
+      notfound: { title: "We couldn't find that recipe", body: "It may have been removed or the link is out of date.", cta: "Browse the library", to: "/app/library" },
+      generic: { title: "Cannot load recipe", body: "Something went wrong on our side. Please try again in a moment.", cta: "Back to my kitchen", to: "/app" },
+    }[err];
+    return (
+      <div className="min-h-screen"><Nav/>
+        <div data-testid="recipe-error" data-reason={err} className="max-w-md mx-auto px-6 py-16">
+          <div className="card-warm border-l-4 border-terracotta p-6">
+            <h1 className="serif text-2xl font-black text-espresso">{copy.title}</h1>
+            <p className="mt-2 text-sm text-muted2">{copy.body}</p>
+            <Link to={copy.to} data-testid="recipe-error-cta" className="btn-pill btn-primary !py-2 !px-4 text-sm inline-flex mt-5">{copy.cta}</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (!r) return <div className="min-h-screen"><Nav/><p className="p-10">Loading…</p></div>;
 
   return (

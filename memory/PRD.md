@@ -89,6 +89,7 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - UI: `WeeklyDropPreviewButton` next to "Send weekly drop email" in Admin → Recipes → Pick of the Week (confirm shows admin email, busy state, provider in success toast, friendly errors).
 - Tests: `backend/tests/test_weekly_drop_preview.py` 7/7 (in-process ASGI, dispatcher mocked), `WeeklyDropPreviewButton.test.jsx` 4/4; frontend total 17/17. One real preview sent via Resend (id 01a0b5be-…).
 - Recipient: `WEEKLY_DROP_PREVIEW_EMAIL` (Preview .env = pohlmangraphics@gmail.com) when set, else admin's email; never from request. `GET /api/admin/email/weekly-drop/preview-recipient` feeds the confirm dialog. Tests 9/9 backend, 6/6 component (frontend 19/19).
+- "Open the recipe" failure RCA: link/ID were correct; recipient session (pohlmangraphics@gmail.com, family, no membership) got 402 → Recipe.jsx showed generic "Cannot load recipe". Fixes: `email_service.recipe_link()` shared builder (https APP_PUBLIC_URL + `/app/recipe/:id`), resolver `_recipe_available()` (exists, titled, published_at ≤ now) for preview + broadcast, template sentence "Hi {name}, this week's Kitchen Club pick is ready:", Recipe.jsx error states (402 → membership panel → /pricing; 404 → not found; other → generic). Tests 12/12 backend. featured_recipe still unset (fallback picks newest: "Rainbow Fruit Kabobs (Copy)" a3f29d4d…; original 502ef474…).
 
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI

@@ -149,6 +149,71 @@ async def test_uses_selected_drop_and_production_template(sent):
 
 
 @pytest.mark.anyio
+async def test_button_url_matches_frontend_route_and_loads_recipe(sent):
+    import re
+    tok = _live_token(ADMIN)
+    r = await _post(tok); assert r.status_code == 200
+    href = re.search(r'href="([^"]+)"[^>]*>Open the recipe<', sent[0]["html"]).group(1)
+    app_url = os.environ["APP_PUBLIC_URL"].rstrip("/")
+    m = re.fullmatch(re.escape(app_url) + r"/app/recipe/([0-9a-f-]{36})", href)
+    assert m, href
+    rid = m.group(1)
+    # Frontend route exists in App.js and the SPA serves it
+    app_js = Path(__file__).resolve().parents[2] / "frontend/src/App.js"
+    assert 'path="/app/recipe/:id"' in app_js.read_text()
+    assert requests.get(href, allow_redirects=True).status_code == 200
+    # Backend loads the same recipe for an authenticated member and it is the resolved recipe
+    api = requests.get(f"{BASE}/recipes/{rid}", headers={"Authorization": f"Bearer {tok}"})
+    assert api.status_code == 200 and api.json()["title"] == r.json()["recipe"]
+
+
+@pytest.mark.anyio
+async def test_template_sentence_and_link_builder(sent):
+    subject, html = email_service.render_weekly_drop(family_name="Pohlman", recipe_title="T", recipe_id="abc", unsubscribe_token="x")
+    assert "Hi Pohlman, this week&rsquo;s Kitchen Club pick is ready:" in html
+    assert "Jeana Maries" not in html
+    assert email_service.recipe_link("abc") == os.environ["APP_PUBLIC_URL"].rstrip("/") + "/app/recipe/abc"
+
+
+@pytest.mark.anyio
+async def test_resolver_skips_unpublished_or_missing_featured(monkeypatch):
+    from datetime import datetime, timezone, timedelta
+    future = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    published = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    class FakeColl:
+        def __init__(self, docs): self.docs = docs
+        async def find_one(self, q, proj=None, sort=None):
+            docs = self.docs
+            if "id" in q: return next((d for d in docs if d["id"] == q["id"]), None)
+            if "key" in q: return next((d for d in docs if d.get("key") == q["key"]), None)
+            out = [d for d in docs if not d.get("is_sample")]
+            if "published_at" in q: out = [d for d in out if d.get("published_at") and d["published_at"] <= q["published_at"]["$lte"]]
+            out.sort(key=lambda d: d.get("published_at") or "", reverse=True)
+            return out[0] if out else None
+    class FakeDB:
+        def __init__(self, featured_id, recipes):
+            self.settings = FakeColl([{"key": "featured_recipe", "value": {"recipe_id": featured_id}}])
+            self.recipes = FakeColl(recipes)
+    good = {"id": "good", "title": "Good", "published_at": published}
+    scheduled = {"id": "future", "title": "Future", "published_at": future}
+    draft = {"id": "draft", "title": "Draft", "published_at": None}
+    # featured is future-dated → fallback to newest published
+    monkeypatch.setattr(server, "db", FakeDB("future", [good, scheduled, draft]))
+    assert (await server._resolve_weekly_drop_recipe())["id"] == "good"
+    # featured missing → fallback
+    monkeypatch.setattr(server, "db", FakeDB("gone", [good, scheduled]))
+    assert (await server._resolve_weekly_drop_recipe())["id"] == "good"
+    # featured published → used
+    monkeypatch.setattr(server, "db", FakeDB("good", [good, scheduled]))
+    assert (await server._resolve_weekly_drop_recipe())["id"] == "good"
+    # nothing published anywhere → 400, never picks future/draft
+    monkeypatch.setattr(server, "db", FakeDB(None, [scheduled, draft]))
+    with pytest.raises(server.HTTPException) as ei:
+        await server._resolve_weekly_drop_recipe()
+    assert ei.value.status_code == 400
+
+
+@pytest.mark.anyio
 async def test_no_state_changes(sent):
     before = _snapshot()
     r = await _post(_live_token(ADMIN)); assert r.status_code == 200

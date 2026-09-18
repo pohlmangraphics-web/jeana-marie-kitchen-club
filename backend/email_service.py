@@ -184,16 +184,22 @@ PREVIEW_BANNER = ('<p style="background:#FFF3E9;border:1px solid #E07A5F;color:#
                   'font-size:12px;font-weight:bold;padding:8px 12px;border-radius:8px;margin:0 0 14px 0">'
                   'Admin preview &mdash; not sent to families.</p>')
 
+def recipe_link(recipe_id: str) -> str:
+    """Absolute link to the frontend recipe route (/app/recipe/:id) on APP_PUBLIC_URL."""
+    base = _app_url()
+    if not base.startswith("https://"): raise ValueError("APP_PUBLIC_URL must be an absolute https URL")
+    return f"{base}/app/recipe/{escape(recipe_id)}"
+
 def render_weekly_drop(*, family_name: str, recipe_title: str, recipe_id: str, unsubscribe_token: str, preview: bool = False) -> tuple[str, str]:
     """Production weekly-drop template. Returns (subject, html)."""
     unsub = f"{_app_url()}/unsubscribe?token={escape(unsubscribe_token)}"
-    recipe_link = f"{_app_url()}/app/recipe/{escape(recipe_id)}"
+    link = recipe_link(recipe_id)
     inner = ((PREVIEW_BANNER if preview else "") +
              f'<h2 style="font-family:Georgia,serif;color:#2C1E16;margin:0 0 12px 0">This week in the kitchen</h2>'
              f'<p style="font-family:Arial,sans-serif;color:#5C4A3D;line-height:1.6">Hi {escape(family_name)}, '
-             f'Jeana Maries new pick is ready:</p>'
+             f'this week&rsquo;s Kitchen Club pick is ready:</p>'
              f'<p style="font-family:Georgia,serif;font-size:22px;color:#E07A5F;margin:16px 0"><strong>{escape(recipe_title)}</strong></p>'
-             f'<p style="text-align:center;padding:20px 0"><a href="{recipe_link}" '
+             f'<p style="text-align:center;padding:20px 0"><a href="{link}" '
              f'style="background:#E07A5F;color:#ffffff;padding:12px 24px;border-radius:999px;'
              f'text-decoration:none;font-weight:bold;font-family:Arial,sans-serif">Open the recipe</a></p>')
     footer = f' <br><a href="{unsub}" style="color:#888">Unsubscribe from weekly recipe emails</a>.'
