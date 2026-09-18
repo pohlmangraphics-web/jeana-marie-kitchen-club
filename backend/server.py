@@ -30,6 +30,9 @@ load_dotenv(ROOT_DIR / '.env')
 
 from storage import put_object, get_object, init_storage, APP_NAME
 import email_service
+import recipe_card
+import re
+import asyncio
 
 MONGO_URL = os.environ['MONGO_URL']
 DB_NAME = os.environ['DB_NAME']
@@ -570,26 +573,61 @@ async def duplicate_recipe(rid: str, admin=Depends(require_admin)):
     r["created_at"] = now_iso()
     await db.recipes.insert_one(r); r.pop("_id", None); return r
 
+def _safe_filename(title: str) -> str:
+    base = re.sub(r"[^A-Za-z0-9]+", "_", title or "Recipe").strip("_")[:80] or "Recipe"
+    return f"{base}_Recipe_Card.pdf"
+
+async def _uploaded_card_pdf(r: dict) -> bytes | None:
+    """Valid manually uploaded card, if any. Returns None for missing/invalid so callers can fall back."""
+    fid = r.get("recipe_card_file_id")
+    if not fid: return None
+    rec = await db.files.find_one({"id": fid, "is_deleted": False}, {"_id": 0})
+    if not rec: return None
+    try: data, _ = get_object(rec["storage_path"])
+    except Exception as e:
+        logging.warning(f"Recipe card object fetch failed for recipe {r.get('id')}: {type(e).__name__}"); return None
+    return data if data and _pdf_page_count(data) > 0 else None
+
+async def _photo_getter(r: dict):
+    """Callback for the generator to load a storage-hosted recipe photo (None when not applicable)."""
+    if not r.get("photo_file_id"): return None
+    rec = await db.files.find_one({"id": r["photo_file_id"], "is_deleted": False}, {"_id": 0})
+    if not rec: return None
+    return lambda _fid: get_object(rec["storage_path"])
+
+async def _card_pdf_for(r: dict, *, prefer_uploaded: bool = True) -> tuple[bytes, str]:
+    """(pdf_bytes, source) — source is 'uploaded' or 'generated'."""
+    if prefer_uploaded:
+        up = await _uploaded_card_pdf(r)
+        if up: return up, "uploaded"
+    data, _meta = await asyncio.to_thread(recipe_card.build_recipe_card, r, get_object=await _photo_getter(r))
+    if _pdf_page_count(data) == 0: raise HTTPException(500, "Recipe card could not be generated")
+    return data, "generated"
+
 @api.get("/recipes/{rid}/card")
-async def get_recipe_card(rid: str, user=Depends(get_current_user)):
-    """Download the uploaded recipe card PDF (member-only)."""
+async def get_recipe_card(rid: str, source: Optional[Literal["auto", "generated"]] = Query("auto"), user=Depends(get_current_user)):
+    """Recipe card PDF (member-only). Valid uploaded card preferred; otherwise generated from recipe data."""
     r = await db.recipes.find_one({"id": rid}, {"_id": 0})
     if not r: raise HTTPException(404, "Not found")
     if not r.get("is_sample") and not has_active_membership(user):
         raise HTTPException(402, "Active membership required")
-    if not r.get("recipe_card_file_id"):
-        raise HTTPException(404, "No recipe card attached")
-    rec = await db.files.find_one({"id": r["recipe_card_file_id"], "is_deleted": False}, {"_id": 0})
-    if not rec: raise HTTPException(404, "File missing")
-    try:
-        data, ctype = get_object(rec["storage_path"])
-    except Exception as e:
-        logging.error(f"Recipe card object fetch failed for recipe {rid}: {type(e).__name__}")
-        raise HTTPException(404, "File missing")
-    if not data or _pdf_page_count(data) == 0:
-        raise HTTPException(422, "Recipe card file is not a valid PDF. Please upload a replacement.")
+    data, src = await _card_pdf_for(r, prefer_uploaded=(source != "generated"))
     return Response(content=data, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="{r["title"].replace(" ","_")}_Recipe_Card.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="{_safe_filename(r["title"])}"',
+                             "X-Recipe-Card-Source": src, "Cache-Control": "private, no-store"})
+
+@api.post("/admin/recipes/{rid}/card/generate")
+async def admin_generate_recipe_card(rid: str, admin=Depends(require_admin)):
+    """Generate (or regenerate) the card from recipe data and validate it. Does not modify the recipe."""
+    r = await db.recipes.find_one({"id": rid}, {"_id": 0})
+    if not r: raise HTTPException(404, "Not found")
+    data, meta = await asyncio.to_thread(recipe_card.build_recipe_card, r, get_object=await _photo_getter(r))
+    pages = _pdf_page_count(data)
+    if pages == 0: raise HTTPException(500, "Recipe card could not be generated")
+    uploaded_valid = (await _uploaded_card_pdf(r)) is not None
+    return {"ok": True, "pages": pages, "size": len(data), "image_included": meta["image_included"],
+            "uploaded_card_valid": uploaded_valid, "served_source": "uploaded" if uploaded_valid else "generated",
+            "filename": _safe_filename(r["title"])}
 
 # --- Favorites / Made ---
 @api.get("/favorites/{pid}")

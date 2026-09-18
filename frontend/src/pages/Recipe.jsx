@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Nav from "../components/Nav";
 import { api } from "../lib/api";
+import { downloadBlob } from "../components/GenerateCardButton";
 import { toast } from "sonner";
 import { Heart, Check, Clock, Users, Zap, NotebookPen, Download } from "lucide-react";
 
@@ -51,9 +52,9 @@ export default function Recipe() {
         toast.error("This recipe card isn't a valid PDF yet. Please check back soon.");
         return;
       }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = `${r.title}_Recipe_Card.pdf`; a.click();
-      URL.revokeObjectURL(url);
+      const cd = res.headers?.["content-disposition"] || "";
+      const m = /filename="([^"]+)"/.exec(cd);
+      downloadBlob(blob, m ? m[1] : `${r.title.replace(/[^A-Za-z0-9]+/g, "_")}_Recipe_Card.pdf`);
     } catch (err) {
       const status = err?.response?.status;
       let msg = "Couldn't download the recipe card. Please try again.";
@@ -110,10 +111,8 @@ export default function Recipe() {
         <div className="mt-4 flex gap-3 flex-wrap">
           <button data-testid="fav-btn" onClick={() => fav(false)} className="btn-pill btn-outline !py-2"><Heart className="w-4 h-4"/> Favorite</button>
           <button data-testid="made-btn" onClick={() => fav(true)} className="btn-pill btn-primary !py-2"><Check className="w-4 h-4"/> We Made This</button>
-          {r.recipe_card_file_id && (
-            <button data-testid="recipe-card-download" onClick={downloadCard} disabled={cardBusy} aria-busy={cardBusy}
-              className="btn-pill btn-honey !py-2 disabled:opacity-60"><Download className="w-4 h-4"/> {cardBusy ? "Preparing…" : "Download Recipe Card"}</button>
-          )}
+          <button data-testid="recipe-card-download" onClick={downloadCard} disabled={cardBusy} aria-busy={cardBusy}
+            className="btn-pill btn-honey !py-2 disabled:opacity-60"><Download className="w-4 h-4"/> {cardBusy ? "Preparing…" : "Download Recipe Card"}</button>
         </div>
 
         <div className="mt-10 grid md:grid-cols-2 gap-10">

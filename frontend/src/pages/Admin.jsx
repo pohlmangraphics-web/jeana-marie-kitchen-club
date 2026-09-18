@@ -6,6 +6,7 @@ import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucid
 import { useFlags } from "../lib/flags";
 import { EmailProviderStatus } from "../components/EmailProviderStatus";
 import { WeeklyDropPreviewButton } from "../components/WeeklyDropPreviewButton";
+import { GenerateCardButton } from "../components/GenerateCardButton";
 
 export default function Admin() {
   const [tab, setTab] = useState("recipes");
@@ -248,7 +249,7 @@ function RecipesAdmin() {
               <div className="flex justify-between items-start gap-2">
                 <div className="min-w-0">
                   <p className="font-bold text-espresso truncate">{r.title}</p>
-                  <p className="text-xs text-muted2">{r.tier} · {new Date(r.published_at).toLocaleDateString()}{r.recipe_card_file_id ? " · 📄 Card" : ""}{r.is_sample ? " · Sample" : ""}</p>
+                  <p className="text-xs text-muted2">{r.tier} · {new Date(r.published_at).toLocaleDateString()}{r.recipe_card_file_id ? " · Uploaded card" : " · Generated card"}{r.is_sample ? " · Sample" : ""}</p>
                 </div>
                 <div className="flex gap-1 shrink-0">
                   <button data-testid={`admin-recipe-feature-${r.id}`} onClick={() => feature(r.id)} title={featuredId === r.id ? "Featured — click to unfeature" : "Feature as Jeana's Pick"}
@@ -256,6 +257,7 @@ function RecipesAdmin() {
                     <Star className={`w-4 h-4 ${featuredId === r.id ? "fill-espresso" : ""}`}/>
                   </button>
                   <button data-testid={`admin-recipe-edit-${r.id}`} onClick={() => startEdit(r)} title="Edit" className="p-2 rounded-lg hover:bg-honey/30 text-espresso"><Pencil className="w-4 h-4"/></button>
+                  <GenerateCardButton recipe={r}/>
                   <button data-testid={`admin-recipe-dup-${r.id}`} onClick={() => duplicate(r.id)} title="Duplicate" className="p-2 rounded-lg hover:bg-sage/20 text-sage"><Copy className="w-4 h-4"/></button>
                   <button data-testid={`admin-recipe-del-${r.id}`} onClick={() => del(r.id)} title="Delete" className="p-2 rounded-lg hover:bg-terracotta/10 text-terracotta"><Trash2 className="w-4 h-4"/></button>
                 </div>
