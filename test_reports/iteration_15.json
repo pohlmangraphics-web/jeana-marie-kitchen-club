@@ -1,0 +1,24 @@
+{
+  "summary": "Full backend + frontend testing of recipe-card PDF generation feature. All 13 provided pytest cases pass. Added 8 supplementary tests (test_recipe_card_iter15.py) covering the exact review-request scenarios (kabobs copy generated, kabobs orig generated, auth matrix on both endpoints, admin generate returns exact key set, uploaded-valid-PDF preference with marker + ?source=generated override, and cleanup). All 8 pass. Frontend Playwright tests confirm: user recipe-card-download works and returns valid 1-page PDF 'Rainbow_Fruit_Kabobs_Copy_Recipe_Card.pdf' starting with %PDF; admin RecipesAdmin list shows correct 'Uploaded card' (Kabobs Copy) vs 'Generated card' (original Kabobs) labels; admin gencard button confirm dialog contains recipe title and 'does not change the recipe'; cancel path issues NO /card/generate request; accept path downloads 'Rainbow_Fruit_Kabobs_Recipe_Card.pdf' and shows success toast 'Recipe card ready — 1 page, with photo. Members receive this generated card.'; recipe H1 renders normally; Admin Flags tab and weekly-drop 'Send preview to me' button both present (not clicked).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_recipe_card.py",
+    "/app/backend/tests/test_recipe_card_iter15.py",
+    "/app/test_reports/pytest/iter15_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Login response returns key 'token' not 'access_token' — worth documenting for future test agents (already handled in iter15 tests).",
+    "POST /api/files/upload returns key 'file_id' (not 'id') — inconsistent with recipe create which returns 'id'. Consider unifying response key naming.",
+    "Recipe create requires 'tier' (little/junior/teen/adult) — clarify in API docs; iter15 test discovered via 422."
+  ],
+  "updated_files": ["/app/backend/tests/test_recipe_card_iter15.py"],
+  "success_rate": {"backend": "100% (21/21 tests: 13 existing + 8 new)", "frontend": "100% (all requested flows verified)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "seed_data_creation": "iter15 uploaded-preference test creates a throwaway 'TEST QA Card ...' recipe + one-page fpdf2 PDF (unique marker), and deletes the recipe on teardown; per constraints did NOT modify either Rainbow Fruit Kabobs recipe or its file refs. Verified recipe_card_file_id for a3f29d4d… remains 'de421242-e475-4a86-a063-e037b2d7ba6d' after all tests.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Recipe-card PDF feature is production-ready. All backend endpoints (GET /api/recipes/{id}/card, POST /api/admin/recipes/{id}/card/generate) work correctly including auth matrix (401/403/200), header X-Recipe-Card-Source, filename in Content-Disposition, uploaded-valid preference over generated, ?source=generated override. Frontend Recipe.jsx download button and Admin GenerateCardButton (with window.confirm) both work. Preview URL: https://recipe-journal-club.preview.emergentagent.com (route /auth for login, /admin for admin). Login response uses key 'token'.",
+  "rca of the issue": "N/A — no bugs found in this iteration."
+}

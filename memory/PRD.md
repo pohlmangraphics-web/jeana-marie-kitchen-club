@@ -95,6 +95,13 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - RCA: "Rainbow Fruit Kabobs (Copy)" card = 45-byte zero-page stub (`%PDF-1.4 1 0 obj<<>>endobj trailer<<>> %%EOF`) from test_iteration7; all 10 `recipe_card` file records are 44–45 B stubs. Download returned 200/application/pdf/45 B → browser "0 of 0". Original "Rainbow Fruit Kabobs" (502ef474…) has no card and IS in the admin list; only the Copy is "Jeana's Pick" because featured_recipe is unset and fallback = newest.
 - Fix: `pypdf` (6.19.0) `_pdf_page_count()`; upload (purpose=recipe_card) → 422 if 0 pages; download → 422 for stub/corrupt, 404 missing object; frontend friendly toasts (402/404/422/generic + client %PDF check), busy state; admin upload surfaces server message. Tests `backend/tests/test_recipe_card.py` 6/6. Kabobs records untouched — replacement PDF must be uploaded by admin via Edit → Replace PDF.
 
+## Jun 2026 Update — Recipe-card PDF generator (iteration_15 PASS)
+- `backend/recipe_card.py`: deterministic branded US-Letter generator (Liberation Sans/Serif + vendored DejaVu fallback in `backend/fonts/` for ½⅓✓ etc.), renders stored data verbatim; sections only when present (safety_notes/tips/activities/lesson_plan); center-cropped photo; multi-page with page-aware bullets; metadata title/author.
+- `GET /recipes/{id}/card`: valid uploaded PDF preferred, else generated (header `X-Recipe-Card-Source`); `?source=generated`. `POST /admin/recipes/{id}/card/generate` (admin, no mutation) returns metadata. Safe filenames.
+- UI: Recipe page download always available; Admin row icon `admin-recipe-gencard-{id}` (confirm → generate → download → toast); list shows "Uploaded card"/"Generated card".
+- Candidates for all 7 recipes + manifest + sample PNGs in `/app/memory/recipe_card_candidates/` — NOT attached to records (awaiting approval). Stub files & Kabobs records untouched.
+- Tests: `test_recipe_card.py` 13/13, testing agent added `test_recipe_card_iter15.py` 8/8.
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)
