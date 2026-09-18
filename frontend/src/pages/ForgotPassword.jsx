@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Nav from "../components/Nav";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import { toast } from "sonner";
 
 export default function ForgotPassword() {
@@ -17,7 +17,7 @@ export default function ForgotPassword() {
       setSent(true);
       toast.success("Check your email for a reset link");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Something went wrong");
+      toast.error(errorMessage(err, "Something went wrong"));
     } finally { setBusy(false); }
   };
 

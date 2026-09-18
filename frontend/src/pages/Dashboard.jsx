@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Nav from "../components/Nav";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
 import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass, Mail, CreditCard } from "lucide-react";
@@ -53,7 +53,7 @@ export default function Dashboard() {
       const { data } = await api.post("/payments/portal", { origin_url: window.location.origin });
       window.location.href = data.portal_url;
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Couldn't open the billing portal");
+      toast.error(errorMessage(err, "Couldn't open the billing portal"));
     }
   };
 
@@ -77,7 +77,7 @@ export default function Dashboard() {
         toast.success("Profile added");
       }
       closeModal(); load();
-    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    } catch (err) { toast.error(errorMessage(err, "Failed")); }
   };
 
   const del = async (p) => {
@@ -88,7 +88,7 @@ export default function Dashboard() {
       if (active_profile?.id === p.id) localStorage.removeItem("jmk_profile");
       toast.success("Profile deleted");
       load();
-    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    } catch (err) { toast.error(errorMessage(err, "Failed")); }
   };
 
   const selectProfile = (p) => {

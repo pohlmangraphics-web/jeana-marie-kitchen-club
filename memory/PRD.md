@@ -72,6 +72,12 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Verified: dispatch logic (off / on-no-key / on / reject-fallback / timeout-no-fallback), 401/403 gating, .env gitignored. No emails sent.
 - Next: user pastes key → restart backend → status shows key_present → flip `USE_RESEND=true` in preview → one test password-reset → flip back.
 
+## Jun 2026 Update — Password-reset crash fix
+- Root cause: FastAPI/Pydantic 422 returns `detail` as an array of objects; frontend passed it straight into `toast.error()` → React "Objects are not valid as a React child" crash.
+- Fix: `errorMessage(err, fallback)` in `frontend/src/lib/api.js` flattens string/array/object details to a friendly string (field labels, 429, network). Applied to all 11 `toast.error` call sites (Auth, Pricing, Admin, Dashboard, Redeem, Forgot, Reset).
+- `ResetPassword.jsx`: inline `reset-error` alert with "Request a new link" on invalid/expired, `reset-missing-token` panel when no token, client-side 8-char guard. Backend untouched (token expiry, single-use, rate limits preserved).
+- Tests: `backend/tests/test_password_reset.py` 6/6 (valid+single-use, invalid, expired, 422 short pw, 422 missing fields, forgot 422/unknown-email), `frontend/src/lib/api.test.js` 7/7.
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

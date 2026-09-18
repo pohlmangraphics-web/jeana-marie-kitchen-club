@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import Nav from "../components/Nav";
 import { toast } from "sonner";
 
@@ -50,7 +50,7 @@ export default function Auth() {
       }
       nav(user.role === "admin" ? "/admin" : "/app");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Something went wrong");
+      toast.error(errorMessage(err, "Something went wrong"));
     } finally { setBusy(false); }
   };
 

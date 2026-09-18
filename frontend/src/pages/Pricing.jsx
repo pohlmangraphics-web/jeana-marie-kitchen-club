@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import Nav from "../components/Nav";
 import Footer from "../components/Footer";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ export default function Pricing() {
       const { data } = await api.post("/payments/checkout", { lookup_key, origin_url: window.location.origin });
       window.location.href = data.checkout_url;
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Checkout failed");
+      toast.error(errorMessage(err, "Checkout failed"));
       setBusy(null);
     }
   };

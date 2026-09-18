@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Nav from "../components/Nav";
-import { api } from "../lib/api";
+import { api, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +21,7 @@ export default function Redeem() {
       await refresh();
       nav("/app");
     } catch (err) {
-      toast.error(err.response?.data?.detail || "Invalid code");
+      toast.error(errorMessage(err, "Invalid code"));
     } finally { setBusy(false); }
   };
 

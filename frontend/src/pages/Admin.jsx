@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
-import { api, API } from "../lib/api";
+import { api, API, errorMessage } from "../lib/api";
 import { toast } from "sonner";
 import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
@@ -100,7 +100,7 @@ function RecipesAdmin() {
       }
       cancelEdit();
       load();
-    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    } catch (err) { toast.error(errorMessage(err, "Failed")); }
     finally { setBusy(false); }
   };
 
@@ -130,7 +130,7 @@ function RecipesAdmin() {
     try {
       const { data } = await api.post("/admin/email/weekly-drop");
       toast.success(`Sent ${data.sent} email(s) - "${data.recipe}"`);
-    } catch (err) { toast.error(err.response?.data?.detail || "Broadcast failed"); }
+    } catch (err) { toast.error(errorMessage(err, "Broadcast failed")); }
     finally { setBroadcastBusy(false); }
   };
   const uploadPhoto = async (e) => {
@@ -289,7 +289,7 @@ function PrintablesAdmin() {
       if (editingId) { await api.patch(`/printables/${editingId}`, f); toast.success("Printable updated"); }
       else { await api.post("/printables", f); toast.success("Printable published"); }
       cancelEdit(); load();
-    } catch (err) { toast.error(err.response?.data?.detail || "Failed"); }
+    } catch (err) { toast.error(errorMessage(err, "Failed")); }
     finally { setBusy(false); }
   };
   const del = async (id) => {
