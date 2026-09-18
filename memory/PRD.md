@@ -78,6 +78,11 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - `ResetPassword.jsx`: inline `reset-error` alert with "Request a new link" on invalid/expired, `reset-missing-token` panel when no token, client-side 8-char guard. Backend untouched (token expiry, single-use, rate limits preserved).
 - Tests: `backend/tests/test_password_reset.py` 6/6 (valid+single-use, invalid, expired, 422 short pw, 422 missing fields, forgot 422/unknown-email), `frontend/src/lib/api.test.js` 7/7.
 
+## Jun 2026 Update — Admin email-provider indicator
+- `frontend/src/components/EmailProviderStatus.jsx` at top of Admin → Flags tab; reads `/api/admin/email/status`, shows "Email: Resend" / "Email: Emergent" / warning "Email: Emergent (fallback)" when use_resend=true but inactive / "Email status unavailable" on error. Refresh button. Booleans only, never values.
+- Tests: `EmailProviderStatus.test.jsx` 6/6 (added @testing-library/react 16 + jest-dom 6.6.3, `src/setupTests.js`). Frontend suite 13/13.
+- Preview currently `USE_RESEND=true` (Resend active, verified via UI indicator).
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

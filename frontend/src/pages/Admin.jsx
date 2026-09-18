@@ -4,6 +4,7 @@ import { api, API, errorMessage } from "../lib/api";
 import { toast } from "sonner";
 import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
+import { EmailProviderStatus } from "../components/EmailProviderStatus";
 
 export default function Admin() {
   const [tab, setTab] = useState("recipes");
@@ -504,6 +505,7 @@ function FlagsAdmin() {
   };
   return (
     <div className="space-y-8">
+      <EmailProviderStatus/>
       {Object.entries(groups).map(([title, keys]) => (
         <div key={title}>
           <h3 className="serif text-xl font-bold text-espresso">{title}</h3>
