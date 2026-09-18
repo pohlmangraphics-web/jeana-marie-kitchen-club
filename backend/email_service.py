@@ -109,17 +109,21 @@ async def _send_via_resend(*, to: str, subject: str, html: str) -> str | None:
         raise HTTPException(status_code=502, detail="Failed to send email")
 
 async def send_email(*, to: str, subject: str, html: str) -> str | None:
+    return (await dispatch_email(to=to, subject=subject, html=html))["id"]
+
+async def dispatch_email(*, to: str, subject: str, html: str) -> dict:
+    """Returns {"provider": "resend"|"emergent", "id": str|None}. Single production dispatch path."""
     _assert_safe_email(subject, html)
     if resend_active():
         try:
             mid = await _send_via_resend(to=to, subject=subject, html=html)
             logger.info(f"Email accepted by provider=resend id={mid}")
-            return mid
+            return {"provider": "resend", "id": mid}
         except _ResendRejected:
             logger.warning("Falling back to Emergent-managed email after definitive Resend rejection")
     mid = await _send_via_emergent(to=to, subject=subject, html=html)
     logger.info(f"Email accepted by provider=emergent id={mid}")
-    return mid
+    return {"provider": "emergent", "id": mid}
 
 async def _send_via_emergent(*, to: str, subject: str, html: str) -> str | None:
     payload = {"to": [to], "subject": subject, "html": html, "from_name": _from_name()}
@@ -176,10 +180,16 @@ async def send_receipt(*, to: str, family_name: str, plan_name: str, amount_cent
              f'text-decoration:none;font-weight:bold;font-family:Arial,sans-serif">Open your kitchen</a></p>')
     return await send_email(to=to, subject="Your Kitchen Club membership is active", html=_shell(inner))
 
-async def send_weekly_drop(*, to: str, family_name: str, recipe_title: str, recipe_id: str, unsubscribe_token: str) -> str | None:
+PREVIEW_BANNER = ('<p style="background:#FFF3E9;border:1px solid #E07A5F;color:#8A3B25;font-family:Arial,sans-serif;'
+                  'font-size:12px;font-weight:bold;padding:8px 12px;border-radius:8px;margin:0 0 14px 0">'
+                  'Admin preview &mdash; not sent to families.</p>')
+
+def render_weekly_drop(*, family_name: str, recipe_title: str, recipe_id: str, unsubscribe_token: str, preview: bool = False) -> tuple[str, str]:
+    """Production weekly-drop template. Returns (subject, html)."""
     unsub = f"{_app_url()}/unsubscribe?token={escape(unsubscribe_token)}"
     recipe_link = f"{_app_url()}/app/recipe/{escape(recipe_id)}"
-    inner = (f'<h2 style="font-family:Georgia,serif;color:#2C1E16;margin:0 0 12px 0">This week in the kitchen</h2>'
+    inner = ((PREVIEW_BANNER if preview else "") +
+             f'<h2 style="font-family:Georgia,serif;color:#2C1E16;margin:0 0 12px 0">This week in the kitchen</h2>'
              f'<p style="font-family:Arial,sans-serif;color:#5C4A3D;line-height:1.6">Hi {escape(family_name)}, '
              f'Jeana Maries new pick is ready:</p>'
              f'<p style="font-family:Georgia,serif;font-size:22px;color:#E07A5F;margin:16px 0"><strong>{escape(recipe_title)}</strong></p>'
@@ -187,4 +197,14 @@ async def send_weekly_drop(*, to: str, family_name: str, recipe_title: str, reci
              f'style="background:#E07A5F;color:#ffffff;padding:12px 24px;border-radius:999px;'
              f'text-decoration:none;font-weight:bold;font-family:Arial,sans-serif">Open the recipe</a></p>')
     footer = f' <br><a href="{unsub}" style="color:#888">Unsubscribe from weekly recipe emails</a>.'
-    return await send_email(to=to, subject=f"This week: {recipe_title}", html=_shell(inner, footer))
+    subject = f"This week: {recipe_title}"
+    return (f"[PREVIEW] {subject}" if preview else subject), _shell(inner, footer)
+
+async def send_weekly_drop(*, to: str, family_name: str, recipe_title: str, recipe_id: str, unsubscribe_token: str) -> str | None:
+    subject, html = render_weekly_drop(family_name=family_name, recipe_title=recipe_title, recipe_id=recipe_id, unsubscribe_token=unsubscribe_token)
+    return await send_email(to=to, subject=subject, html=html)
+
+async def send_weekly_drop_preview(*, to: str, family_name: str, recipe_title: str, recipe_id: str) -> dict:
+    subject, html = render_weekly_drop(family_name=family_name, recipe_title=recipe_title, recipe_id=recipe_id,
+                                       unsubscribe_token="preview", preview=True)
+    return await dispatch_email(to=to, subject=subject, html=html)

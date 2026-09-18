@@ -83,6 +83,12 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Tests: `EmailProviderStatus.test.jsx` 6/6 (added @testing-library/react 16 + jest-dom 6.6.3, `src/setupTests.js`). Frontend suite 13/13.
 - Preview currently `USE_RESEND=true` (Resend active, verified via UI indicator).
 
+## Jun 2026 Update — Admin Weekly Drop Email Preview
+- `POST /api/admin/email/weekly-drop/preview` (admin-only, no body accepted; recipient = admin's own email; 5/admin/hour rate limit). Reuses `_resolve_weekly_drop_recipe()` (shared with broadcast) and `email_service.render_weekly_drop(preview=True)` — same template with `[PREVIEW]` subject + "Admin preview — not sent to families." banner; dispatched via `dispatch_email` (returns provider + id). Zero DB writes.
+- `email_service.dispatch_email()` now the single production dispatcher; `send_email` wraps it.
+- UI: `WeeklyDropPreviewButton` next to "Send weekly drop email" in Admin → Recipes → Pick of the Week (confirm shows admin email, busy state, provider in success toast, friendly errors).
+- Tests: `backend/tests/test_weekly_drop_preview.py` 7/7 (in-process ASGI, dispatcher mocked), `WeeklyDropPreviewButton.test.jsx` 4/4; frontend total 17/17. One real preview sent via Resend (id 01a0b5be-…).
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

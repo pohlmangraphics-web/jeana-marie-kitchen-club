@@ -320,8 +320,8 @@ async def unsubscribe(token: str):
     await db.users.update_one({"id": user["id"]}, {"$set": {"email_optin_weekly": False}})
     return {"ok": True, "message": "You have been unsubscribed from weekly recipe emails."}
 
-@api.post("/admin/email/weekly-drop")
-async def send_weekly_drop_broadcast(admin=Depends(require_admin)):
+async def _resolve_weekly_drop_recipe() -> dict:
+    """Selected featured recipe, else newest published non-sample. Shared by broadcast + admin preview."""
     doc = await db.settings.find_one({"key": "featured_recipe"}, {"_id": 0})
     rid = ((doc or {}).get("value") or {}).get("recipe_id")
     r = None
@@ -329,6 +329,21 @@ async def send_weekly_drop_broadcast(admin=Depends(require_admin)):
     if not r:
         r = await db.recipes.find_one({"is_sample": {"$ne": True}}, {"_id": 0}, sort=[("published_at", -1)])
     if not r: raise HTTPException(400, "No recipe available to announce")
+    return r
+
+@api.post("/admin/email/weekly-drop/preview")
+async def send_weekly_drop_preview(admin=Depends(require_admin)):
+    rate_limit(f"drop-preview:{admin['id']}", 5, 3600)
+    r = await _resolve_weekly_drop_recipe()
+    result = await email_service.send_weekly_drop_preview(
+        to=admin["email"], family_name=admin.get("family_name") or "Jeana",
+        recipe_title=r["title"], recipe_id=r["id"])
+    return {"ok": True, "provider": result["provider"], "message_id": result["id"],
+            "recipient": admin["email"], "recipe": r["title"]}
+
+@api.post("/admin/email/weekly-drop")
+async def send_weekly_drop_broadcast(admin=Depends(require_admin)):
+    r = await _resolve_weekly_drop_recipe()
     users = await db.users.find({"role": "family", "email_optin_weekly": {"$ne": False}}, {"_id": 0}).to_list(10000)
     sent, skipped, failed = 0, 0, 0
     for u in users:

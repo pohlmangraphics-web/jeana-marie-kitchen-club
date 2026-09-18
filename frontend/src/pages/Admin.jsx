@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
 import { EmailProviderStatus } from "../components/EmailProviderStatus";
+import { WeeklyDropPreviewButton } from "../components/WeeklyDropPreviewButton";
+import { useAuth } from "../lib/auth";
 
 export default function Admin() {
   const [tab, setTab] = useState("recipes");
@@ -49,6 +51,7 @@ const BLANK_RECIPE = { title: "", tier: "adult", description: "", ingredients: "
 const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Holiday"];
 
 function RecipesAdmin() {
+  const { user } = useAuth();
   const [list, setList] = useState([]);
   const [f, setF] = useState(BLANK_RECIPE);
   const [editingId, setEditingId] = useState(null);
@@ -230,6 +233,7 @@ function RecipesAdmin() {
           </div>
           <div className="mt-3 flex gap-2 flex-wrap">
             <button data-testid="featured-save-schedule" onClick={saveSchedule} className="btn-pill btn-outline !py-1 !px-3 text-xs">Save schedule</button>
+            <WeeklyDropPreviewButton adminEmail={user?.email}/>
             <button data-testid="weekly-drop-broadcast" onClick={broadcast} disabled={broadcastBusy}
               className="btn-pill btn-primary !py-1 !px-3 text-xs">
               {broadcastBusy ? "Sending…" : "Send weekly drop email"}
