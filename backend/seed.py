@@ -25,25 +25,50 @@ def now_iso():
     return datetime.now(timezone.utc).isoformat()
 
 
-ADMIN = {
-    "id": uid(),
-    "email": "admin@jeanamarie.club",
-    "family_name": "Jeana Marie",
-    "password_hash": h("JeanaAdmin2026!"),
-    "role": "admin",
-    "membership_expires_at": (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat(),
-    "created_at": now_iso(),
-}
+def _env(name: str, required: bool = False, default: str = "") -> str:
+    val = os.environ.get(name, "").strip() or default
+    if required and not val:
+        raise SystemExit(f"seed: {name} is required. Set it in backend/.env (never commit values).")
+    return val
 
-DEMO = {
-    "id": uid(),
-    "email": "demo@family.com",
-    "family_name": "The Bakers",
-    "password_hash": h("DemoFamily123!"),
-    "role": "family",
-    "membership_expires_at": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
-    "created_at": now_iso(),
-}
+
+def _is_production() -> bool:
+    return os.environ.get("APP_ENV", "").lower() == "production" or os.environ.get("STRIPE_MODE", "").lower() == "live"
+
+
+def build_admin() -> dict:
+    pw = _env("SEED_ADMIN_PASSWORD", required=True)
+    if len(pw) < 12:
+        raise SystemExit("seed: SEED_ADMIN_PASSWORD must be at least 12 characters.")
+    return {
+        "id": uid(),
+        "email": _env("SEED_ADMIN_EMAIL", required=True).lower(),
+        "family_name": _env("SEED_ADMIN_FAMILY_NAME", default="Jeana Marie"),
+        "password_hash": h(pw),
+        "role": "admin",
+        "membership_expires_at": (datetime.now(timezone.utc) + timedelta(days=3650)).isoformat(),
+        "created_at": now_iso(),
+    }
+
+
+def demo_enabled() -> bool:
+    """Demo family is opt-in and never created in production."""
+    return _env("SEED_DEMO_ENABLED").lower() == "true" and not _is_production()
+
+
+def build_demo() -> dict:
+    pw = _env("SEED_DEMO_PASSWORD", required=True)
+    if len(pw) < 12:
+        raise SystemExit("seed: SEED_DEMO_PASSWORD must be at least 12 characters.")
+    return {
+        "id": uid(),
+        "email": _env("SEED_DEMO_EMAIL", required=True).lower(),
+        "family_name": "The Bakers",
+        "password_hash": h(pw),
+        "role": "family",
+        "membership_expires_at": (datetime.now(timezone.utc) + timedelta(days=365)).isoformat(),
+        "created_at": now_iso(),
+    }
 
 
 RECIPES = [
@@ -155,27 +180,31 @@ PRINTABLES = [
 
 
 async def main():
-    if not await db.users.find_one({"email": ADMIN["email"]}):
-        await db.users.insert_one(ADMIN)
-        print(f"Admin created: {ADMIN['email']} / JeanaAdmin2026!")
+    admin = build_admin()
+    if not await db.users.find_one({"email": admin["email"]}):
+        await db.users.insert_one(admin)
+        print(f"Admin created: {admin['email']}")
     else:
         print("Admin exists")
-    if not await db.users.find_one({"email": DEMO["email"]}):
-        await db.users.insert_one(DEMO)
-        # add profiles
-        for p in [
-            {"name": "Emma", "tier": "little", "avatar_emoji": "🧒"},
-            {"name": "Liam", "tier": "junior", "avatar_emoji": "👦"},
-            {"name": "Sofia", "tier": "teen", "avatar_emoji": "👧"},
-            {"name": "Parent", "tier": "adult", "avatar_emoji": "👩‍🍳"},
-        ]:
-            await db.profiles.insert_one({
-                "id": uid(), "user_id": DEMO["id"], "photo_opt_in": False,
-                "pin": None, "created_at": now_iso(), **p,
-            })
-        print(f"Demo family created: {DEMO['email']} / DemoFamily123!")
+    if demo_enabled():
+        demo = build_demo()
+        if not await db.users.find_one({"email": demo["email"]}):
+            await db.users.insert_one(demo)
+            for p in [
+                {"name": "Emma", "tier": "little", "avatar_emoji": "🧒"},
+                {"name": "Liam", "tier": "junior", "avatar_emoji": "👦"},
+                {"name": "Sofia", "tier": "teen", "avatar_emoji": "👧"},
+                {"name": "Parent", "tier": "adult", "avatar_emoji": "👩‍🍳"},
+            ]:
+                await db.profiles.insert_one({
+                    "id": uid(), "user_id": demo["id"], "photo_opt_in": False,
+                    "pin": None, "created_at": now_iso(), **p,
+                })
+            print(f"Demo family created: {demo['email']}")
+        else:
+            print("Demo family exists")
     else:
-        print("Demo family exists")
+        print("Demo family skipped (SEED_DEMO_ENABLED not true, or production environment)")
 
     if await db.recipes.count_documents({}) == 0:
         await db.recipes.insert_many(RECIPES)

@@ -1,4 +1,5 @@
 """Iteration 15 supplementary tests for recipe card generation."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import io
 import os
 import time
@@ -9,8 +10,8 @@ from fpdf import FPDF
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/") or open("/app/frontend/.env").read().split("REACT_APP_BACKEND_URL=")[1].split("\n")[0].strip()
 
-ADMIN = ("admin@jeanamarie.club", "JeanaAdmin2026!")
-DEMO = ("demo@family.com", "DemoFamily123!")
+ADMIN = ("admin@jeanamarie.club", _ADMIN_PW)
+DEMO = ("demo@family.com", _DEMO_PW)
 
 KABOBS_COPY = "a3f29d4d-16ce-4273-8da7-0c26db31e91a"
 KABOBS_ORIG = "502ef474-b8a0-4f5e-8188-d09af0fd0bce"

@@ -29,7 +29,7 @@
     "/app/frontend/src/pages/Recipe.jsx"
   ],
   "success_rate": {"backend": "100% (6/6 pytest)", "frontend": "100% (7/7 scenarios: happy path, 3 mocked error codes, admin upload rejection, 2 regression checks)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! (used); demo@family.com / DemoFamily123! (not needed this run)",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted> (used); demo@family.com / <demo password redacted> (not needed this run)",
   "seed_data_creation": "test_recipe_card.py auto-creates & tears down a TEST Card Recipe {uuid} and any db.files docs with original_filename starting TEST_ (fixtures scope=module with teardown). No stray artifacts. Rainbow Fruit Kabobs (Copy) recipe id a3f29d4d-16ce-4273-8da7-0c26db31e91a and its 45-byte stub card file were read but NOT modified — required to keep as the reproduction case.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

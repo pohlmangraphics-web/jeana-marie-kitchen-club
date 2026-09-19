@@ -4,6 +4,7 @@ Covers: registration, login, rate-limits, forgot/reset, Stripe checkout,
 membership revoke/restore, redeem codes, four tier libraries, recipe card
 upload+download, admin editing endpoints, CSV exports, and session flows.
 """
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import os
 import io
 import time
@@ -14,8 +15,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import asyncio
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
-ADMIN = {"email": "admin@jeanamarie.club", "password": "JeanaAdmin2026!"}
-DEMO = {"email": "demo@family.com", "password": "DemoFamily123!"}
+ADMIN = {"email": "admin@jeanamarie.club", "password": _ADMIN_PW}
+DEMO = {"email": "demo@family.com", "password": _DEMO_PW}
 
 
 def H(t): return {"Authorization": f"Bearer {t}"}

@@ -1,4 +1,5 @@
 """Iteration 10 tests: recipe categories + admin-configurable Etsy shop URL."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import os
 import pytest
 import requests
@@ -6,9 +7,9 @@ import requests
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://recipe-journal-club.preview.emergentagent.com').rstrip('/')
 
 ADMIN_EMAIL = "admin@jeanamarie.club"
-ADMIN_PASS = "JeanaAdmin2026!"
+ADMIN_PASS = _ADMIN_PW
 FAMILY_EMAIL = "demo@family.com"
-FAMILY_PASS = "DemoFamily123!"
+FAMILY_PASS = _DEMO_PW
 
 
 def _login(email, password):

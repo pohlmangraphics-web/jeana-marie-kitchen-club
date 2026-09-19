@@ -22,7 +22,7 @@
   ],
   "updated_files": [],
   "success_rate": {"backend": "90.5% (19/21)", "frontend": "100% (all review checks)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "One transient TEST_ recipe + TEST_ printable created and deleted within test lifecycle. One fresh signup (newfam+it7-<timestamp>@example.com/password12345) created — no cleanup needed as it has no membership.",
   "retest_needed": true,
   "main_agent_can_self_test": true,

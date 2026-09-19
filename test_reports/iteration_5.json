@@ -10,7 +10,7 @@
   ],
   "updated_files": [],
   "success_rate": {"backend": "100% (7/7 spot checks)", "frontend": "100% (26/26 review checks)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "none",
   "retest_needed": false,
   "main_agent_can_self_test": true,

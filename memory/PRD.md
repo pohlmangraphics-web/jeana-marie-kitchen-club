@@ -102,6 +102,10 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - Candidates for all 7 recipes + manifest + sample PNGs in `/app/memory/recipe_card_candidates/` — NOT attached to records (awaiting approval). Stub files & Kabobs records untouched.
 - Tests: `test_recipe_card.py` 13/13, testing agent added `test_recipe_card_iter15.py` 8/8.
 
+## Jun 2026 Update — A2: hardcoded seed credentials removed
+- `backend/seed.py` env-driven: `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` (≥12 chars, required → SystemExit 1 if missing); demo only if `SEED_DEMO_ENABLED=true` and not production (`APP_ENV=production` or `STRIPE_MODE=live`). Passwords never printed.
+- `backend/tests/creds.py` reads `TEST_ADMIN_*`/`TEST_DEMO_*` env or the now-untracked `memory/test_credentials.md` (gitignored, removed from index; file kept locally for agents). All 11 test files patched; README/docs/test_reports scrubbed. `test_seed_security.py` 6/6 incl. git-grep guard. Preview DB users/passwords unchanged.
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

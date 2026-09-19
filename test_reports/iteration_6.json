@@ -10,7 +10,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_gift_certificate.py"],
   "success_rate": {"backend": "100% (10/10)", "frontend": "100% (all 15 review checks)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "none",
   "retest_needed": false,
   "main_agent_can_self_test": true,

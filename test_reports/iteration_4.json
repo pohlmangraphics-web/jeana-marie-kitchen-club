@@ -15,7 +15,7 @@
   ],
   "updated_files": [],
   "success_rate": {"backend": "n/a", "frontend": "100% (22/22 checks)"},
-  "test_credentials": "demo@family.com / DemoFamily123! (used to verify Recipe page eyebrow)",
+  "test_credentials": "demo@family.com / <demo password redacted> (used to verify Recipe page eyebrow)",
   "seed_data_creation": "none",
   "retest_needed": false,
   "main_agent_can_self_test": true,

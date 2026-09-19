@@ -20,7 +20,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_iteration11.py"],
   "success_rate": {"backend": "100% (19/19)", "frontend": "100% (all iter11 flows verified; 1 minor UX note)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "Temporarily assigned unsubscribe_token='test_unsub_iter11_ABC123xyz' to demo@family.com for the unsubscribe test (left in place; harmless). Featured recipe schedule was set/cleared multiple times, final state: recipe_id=null, starts_at=null, ends_at=null. demo@family.com email_optin_weekly restored to true. Weekly drop broadcast did trigger real Resend sends to admin+demo (expected per test plan).",
   "retest_needed": false,
   "main_agent_can_self_test": true,

@@ -10,7 +10,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_iteration8.py"],
   "success_rate": {"backend": "100% (26/26)", "frontend": "not tested (backend only)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "Transient printables (Iter8 Short, long-title, Iter8 Uploaded) all created and deleted within test lifecycle. Feature flag personalized_pdf_export toggled ON then OFF within TestJournalExport.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

@@ -45,9 +45,10 @@ yarn install
 yarn start                 # http://localhost:3000
 ```
 
-## Seeded credentials (dev only)
-- **Admin** — `admin@jeanamarie.club` / `JeanaAdmin2026!`
-- **Demo family** — `demo@family.com` / `DemoFamily123!` (annual membership, 4 profiles)
+## Seeding (credentials are environment-driven, never committed)
+`backend/seed.py` reads `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` (≥12 chars) from `backend/.env` and exits with an error if they are missing.
+A demo family is created only when `SEED_DEMO_ENABLED=true` **and** the environment is not production (`APP_ENV=production` or `STRIPE_MODE=live` disables it); it uses `SEED_DEMO_EMAIL` / `SEED_DEMO_PASSWORD`.
+Passwords are never printed. Tests read `TEST_ADMIN_*` / `TEST_DEMO_*` env vars (or the untracked `memory/test_credentials.md`).
 
 ## Feature flags
 

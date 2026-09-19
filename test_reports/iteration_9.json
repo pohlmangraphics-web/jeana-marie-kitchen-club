@@ -18,7 +18,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_iteration9.py"],
   "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all iter9 flows verified)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "Transient printable 'Iter9 Tracking' created and deleted within test. Featured recipe was toggled on for a recipe during frontend test then toggled off in cleanup step (verified). Backend module-scope fixture also PUTs recipe_id:null at end. Demo dashboard should be back to no-featured state.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

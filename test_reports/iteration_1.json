@@ -35,7 +35,7 @@
     "/app/backend/tests/backend_test.py"
   ],
   "success_rate": {"backend": "96.9% (31/32 including expected-failure rate-limit test)", "frontend": "100% of tested flows"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! ; demo@family.com / DemoFamily123! (both verified working)",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted> ; demo@family.com / <demo password redacted> (both verified working)",
   "seed_data_creation": "None - used existing seeded admin, demo family (4 profiles), 6 recipes (3 samples), 5 printables. Tests use TEST_-prefixed emails for isolation; no teardown implemented but data volume is negligible.",
   "retest_needed": true,
   "should_main_agent_self_test": true,

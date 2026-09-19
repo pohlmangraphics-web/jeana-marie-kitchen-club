@@ -35,7 +35,7 @@ The following `.env` values MUST exist in the deployment secrets tab. Preview va
 
 - [ ] `JWT_SECRET` rotated from preview value (invalidates all existing tokens — users must re-login, which is desired for a clean prod launch)
 - [ ] `RESEND_API_KEY` rotated to production key (dev key will 403 on production domain sends)
-- [ ] Admin password rotated from `JeanaAdmin2026!` to a strong unique password (see §7 below)
+- [ ] Admin password rotated from `<seeded admin password>` to a strong unique password (see §7 below)
 - [ ] Demo family account `demo@family.com` removed (see §7)
 - [ ] All `TEST_*` seed users purged (previous testing agent confirmed 29 already cleaned, run one final sweep)
 - [ ] Any hardcoded API keys in the codebase (`grep -rn "sk_live\|sk_test\|re_" /app/backend /app/frontend/src`) return zero results

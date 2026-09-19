@@ -12,7 +12,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_iteration10.py"],
   "success_rate": {"backend": "100% (12/12)", "frontend": "100% (all iter10 flows verified)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "Transient TEST_ITER10 recipes created and all deleted at test end. Etsy URL was set to https://www.etsy.com/shop/JeanaMariesTest during test then cleared back to '' in cleanup step. No leftover data.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

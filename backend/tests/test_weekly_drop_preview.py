@@ -1,4 +1,5 @@
 """Admin weekly-drop preview. In-process ASGI client with the email dispatcher patched — no real emails."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import os
 import sys
 import uuid
@@ -12,8 +13,8 @@ import server  # noqa: E402  (loads backend/.env)
 import email_service  # noqa: E402
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
-ADMIN = {"email": "admin@jeanamarie.club", "password": "JeanaAdmin2026!"}
-DEMO = {"email": "demo@family.com", "password": "DemoFamily123!"}
+ADMIN = {"email": "admin@jeanamarie.club", "password": _ADMIN_PW}
+DEMO = {"email": "demo@family.com", "password": _DEMO_PW}
 
 
 _TOKENS = {}

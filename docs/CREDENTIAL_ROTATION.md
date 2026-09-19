@@ -20,7 +20,7 @@ This is not optional. Any of these values still in use in production would let a
 | 8 | `EMERGENT_LLM_KEY` (if present) | Emergent-managed | Emergent → Profile → Manage Plan → Universal Key → "Rotate" | Drain your LLM credit balance |
 | 9 | Admin password | Database (`users` collection) | See §Admin Rotation below | Full admin console access — publish/delete recipes, generate free codes, export user data |
 | 10 | `admin@jeanamarie.club` email → real business email | Database (`users` collection) | See §Admin Rotation below | Reduces phishing surface (attacker who guessed old email now can't) |
-| 11 | Demo family password (`DemoFamily123!`) | Database | Delete the demo account entirely after final preview testing | Login as a "real family" and see the app from a user's POV |
+| 11 | Demo family password (`<seeded demo password>`) | Database | Delete the demo account entirely after final preview testing | Login as a "real family" and see the app from a user's POV |
 | 12 | Pre-seeded Etsy `codes` used during testing | Database (`codes` collection) | Delete test batches | Attacker with a leaked test code redeems a free membership |
 
 ---
@@ -91,7 +91,7 @@ After all rotations, verify each:
 - [ ] Trigger a password reset — email arrives from `hello@club.jeanamarieprivatechef.com` (proves Resend rotation worked)
 - [ ] Complete a real $9.99 monthly checkout with a Stripe test card in the LIVE Stripe test mode ($ zero-dollar sandbox) — verify webhook fires and `membership_expires_at` is set correctly (proves Stripe rotation worked)
 - [ ] Click Manage Membership → Stripe Portal opens (proves customer + subscription plumbing survived the rotation)
-- [ ] Old `admin@jeanamarie.club` / `JeanaAdmin2026!` login returns 401 (proves rotation actually took)
+- [ ] Old `admin@jeanamarie.club` / `<seeded admin password>` login returns 401 (proves rotation actually took)
 - [ ] `db.users.find({email: "demo@family.com"}).count()` returns 0 (proves demo cleanup succeeded)
 
 ---

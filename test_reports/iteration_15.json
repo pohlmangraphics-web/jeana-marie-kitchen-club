@@ -15,7 +15,7 @@
   ],
   "updated_files": ["/app/backend/tests/test_recipe_card_iter15.py"],
   "success_rate": {"backend": "100% (21/21 tests: 13 existing + 8 new)", "frontend": "100% (all requested flows verified)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026!, demo@family.com / DemoFamily123!",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted>, demo@family.com / <demo password redacted>",
   "seed_data_creation": "iter15 uploaded-preference test creates a throwaway 'TEST QA Card ...' recipe + one-page fpdf2 PDF (unique marker), and deletes the recipe on teardown; per constraints did NOT modify either Rainbow Fruit Kabobs recipe or its file refs. Verified recipe_card_file_id for a3f29d4d… remains 'de421242-e475-4a86-a063-e037b2d7ba6d' after all tests.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

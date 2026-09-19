@@ -1,4 +1,5 @@
 """Iteration 6: gift certificate endpoint + regression spot checks."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import os
 import requests
 
@@ -6,7 +7,7 @@ BASE = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 API = f"{BASE}/api"
 
 ADMIN_EMAIL = "admin@jeanamarie.club"
-ADMIN_PW = "JeanaAdmin2026!"
+ADMIN_PW = _ADMIN_PW
 
 
 # --- regression spot check ---

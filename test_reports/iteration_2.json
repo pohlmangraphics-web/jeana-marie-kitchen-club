@@ -21,7 +21,7 @@
   ],
   "updated_files": ["/app/backend/tests/backend_test.py"],
   "success_rate": {"backend": "100% (36/36)", "frontend": "not retested (unchanged per request)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! ; demo@family.com / DemoFamily123! (both verified)",
+  "test_credentials": "admin@jeanamarie.club / <admin password redacted> ; demo@family.com / <demo password redacted> (both verified)",
   "seed_data_creation": "Test-created users use TEST_ prefixed emails; no cleanup implemented but volume negligible.",
   "retest_needed": false,
   "should_main_agent_self_test": false,

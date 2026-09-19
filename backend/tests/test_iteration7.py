@@ -1,11 +1,12 @@
 """Iteration 7 backend tests: uploads, edit/duplicate/delete, printable fallback, multi_cell wrapping."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import os, io, pytest, requests
 
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 API = f"{BASE_URL}/api"
 
-ADMIN = {"email": "admin@jeanamarie.club", "password": "JeanaAdmin2026!"}
-DEMO = {"email": "demo@family.com", "password": "DemoFamily123!"}
+ADMIN = {"email": "admin@jeanamarie.club", "password": _ADMIN_PW}
+DEMO = {"email": "demo@family.com", "password": _DEMO_PW}
 
 
 def _login(creds):

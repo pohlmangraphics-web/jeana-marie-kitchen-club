@@ -1,5 +1,6 @@
 """Recipe-card PDFs: generator (unit) + endpoint (uploaded preference, stub fallback, auth, no mutation).
 Creates & removes its own test recipe/files; never touches real recipes."""
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import ADMIN_PASSWORD as _ADMIN_PW, DEMO_PASSWORD as _DEMO_PW  # noqa: E402
 import io
 import os
 import sys
@@ -18,7 +19,7 @@ from recipe_card import build_recipe_card  # noqa: E402
 
 BASE = os.environ["REACT_APP_BACKEND_URL"].rstrip("/") + "/api"
 pdb = MongoClient(os.environ["MONGO_URL"])[os.environ["DB_NAME"]]
-ADMIN = {"email": "admin@jeanamarie.club", "password": "JeanaAdmin2026!"}
+ADMIN = {"email": "admin@jeanamarie.club", "password": _ADMIN_PW}
 STUB = b"%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n"  # the broken Kabobs (Copy) card bytes
 
 SHORT = {"id": "s", "title": "Toast", "tier": "little", "ingredients": ["bread"], "steps": ["Toast it."]}
