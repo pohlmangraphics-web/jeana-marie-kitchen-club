@@ -106,6 +106,11 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - `backend/seed.py` env-driven: `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` (≥12 chars, required → SystemExit 1 if missing); demo only if `SEED_DEMO_ENABLED=true` and not production (`APP_ENV=production` or `STRIPE_MODE=live`). Passwords never printed.
 - `backend/tests/creds.py` reads `TEST_ADMIN_*`/`TEST_DEMO_*` env or the now-untracked `memory/test_credentials.md` (gitignored, removed from index; file kept locally for agents). All 11 test files patched; README/docs/test_reports scrubbed. `test_seed_security.py` 6/6 incl. git-grep guard. Preview DB users/passwords unchanged.
 
+## Jun 2026 Update — Content-bundle migration tooling (not run against Live)
+- `backend/tools/export_content_bundle.py` (explicit approved UUIDs: 6 recipes, 5 printables, settings feature_flags/featured_recipe/etsy_url; drops _id + file refs; zeroes download_count) → `backend/content_bundle.json` (sha256 d88080d8…) + `content_bundle.manifest.md`.
+- `backend/tools/import_content_bundle.py`: dry-run default; `--apply` + `APP_ENV=production` required; refuses DB_NAME matching preview/test/dev/staging/local/sandbox; $setOnInsert upserts by UUID; aborts on differing content, same-title/different-id, or differing setting; whitelisted collections/settings only.
+- `seed.py`: starter recipes/printables now require `SEED_STARTER_CONTENT=true` and non-production. Tests `test_content_bundle_tools.py` 8/8 (scratch DB, dropped).
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

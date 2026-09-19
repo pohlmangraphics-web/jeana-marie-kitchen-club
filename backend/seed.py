@@ -56,6 +56,11 @@ def demo_enabled() -> bool:
     return _env("SEED_DEMO_ENABLED").lower() == "true" and not _is_production()
 
 
+def starter_content_enabled() -> bool:
+    """Dev-only starter recipes/printables; production content comes from tools/import_content_bundle.py."""
+    return _env("SEED_STARTER_CONTENT").lower() == "true" and not _is_production()
+
+
 def build_demo() -> dict:
     pw = _env("SEED_DEMO_PASSWORD", required=True)
     if len(pw) < 12:
@@ -206,12 +211,15 @@ async def main():
     else:
         print("Demo family skipped (SEED_DEMO_ENABLED not true, or production environment)")
 
-    if await db.recipes.count_documents({}) == 0:
-        await db.recipes.insert_many(RECIPES)
-        print(f"Inserted {len(RECIPES)} recipes")
-    if await db.printables.count_documents({}) == 0:
-        await db.printables.insert_many(PRINTABLES)
-        print(f"Inserted {len(PRINTABLES)} printables")
+    if starter_content_enabled():
+        if await db.recipes.count_documents({}) == 0:
+            await db.recipes.insert_many(RECIPES)
+            print(f"Inserted {len(RECIPES)} starter recipes")
+        if await db.printables.count_documents({}) == 0:
+            await db.printables.insert_many(PRINTABLES)
+            print(f"Inserted {len(PRINTABLES)} starter printables")
+    else:
+        print("Starter content skipped (SEED_STARTER_CONTENT not true, or production). Use tools/import_content_bundle.py for approved content.")
 
 
 if __name__ == "__main__":

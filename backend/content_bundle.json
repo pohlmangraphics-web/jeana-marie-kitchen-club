@@ -1,0 +1,264 @@
+{
+ "bundle_version": 1,
+ "exported_at": "2026-09-19T18:10:18.633729+00:00",
+ "printables": [
+  {
+   "content": "Color each tool. Say its name out loud with your grown-up.",
+   "created_at": "2026-09-07T04:21:31.596308+00:00",
+   "description": "Whisk, pan, spoon and rolling pin ready to be colored in.",
+   "download_count": 0,
+   "id": "6894d221-3a53-423e-870e-a29ce6745a54",
+   "kind": "coloring",
+   "tier": "little",
+   "title": "Kitchen Tools Coloring Page"
+  },
+  {
+   "content": "Groups: Fruit, Grain, Dairy, Protein, Vegetable",
+   "created_at": "2026-09-07T04:21:31.596313+00:00",
+   "description": "Draw a line from each food to its group.",
+   "download_count": 0,
+   "id": "924178ba-9f25-45c3-a6a8-f82530f0c1b3",
+   "kind": "food_id",
+   "tier": "little",
+   "title": "Food Group Match Worksheet"
+  },
+  {
+   "content": "",
+   "created_at": "2026-09-07T04:21:31.596317+00:00",
+   "description": "20 blank lines for your grocery list. Check them off in the store!",
+   "download_count": 0,
+   "id": "73e0b3f0-a355-405e-ac12-4616b63a88ce",
+   "kind": "shopping_list",
+   "tier": "junior",
+   "title": "My Blank Shopping List"
+  },
+  {
+   "content": "",
+   "created_at": "2026-09-07T04:21:31.596321+00:00",
+   "description": "Enter store prices and calculate cost per serving.",
+   "download_count": 0,
+   "id": "23b621c1-e853-4c17-9338-daa51e3334d7",
+   "kind": "meal_costing",
+   "tier": "teen",
+   "title": "Meal Costing Worksheet"
+  },
+  {
+   "content": "Objective: Recognize 1/4, 1/2, 3/4 cup measurements.\n\nActivity: While measuring, pause and ask the child to identify each fraction.\n\nExtension: Combine 1/4 + 1/4 = 1/2. Prove it in the measuring cup!",
+   "created_at": "2026-09-07T04:21:31.596325+00:00",
+   "description": "One-page family learning guide tying this week's muffin recipe to fractions.",
+   "download_count": 0,
+   "id": "e53427b2-294d-40ae-b147-404c677b7251",
+   "kind": "lesson_plan",
+   "tier": "junior",
+   "title": "Weekly Family Learning Guide - Fractions in the Kitchen"
+  }
+ ],
+ "recipes": [
+  {
+   "cook_time": 20,
+   "created_at": "2026-09-07T04:21:31.596256+00:00",
+   "description": "Simple parent-guided muffins - little ones stir and sprinkle cinnamon.",
+   "homeschool_topic": "Fractions & Measuring",
+   "id": "a2797439-872e-488c-ac32-51e026e0333a",
+   "ingredients": [
+    "1 cup flour",
+    "1/2 cup sugar",
+    "1 tsp baking powder",
+    "1 tsp cinnamon",
+    "1 large apple, chopped",
+    "1 egg",
+    "1/2 cup milk",
+    "1/4 cup oil"
+   ],
+   "is_sample": true,
+   "lesson_plan": "Talk about fractions using 1/2 cup vs 1/4 cup. Count apple pieces.",
+   "photo_url": "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?w=800",
+   "prep_time": 10,
+   "published_at": "2026-09-07T04:21:31.596254+00:00",
+   "servings": 12,
+   "steps": [
+    "Preheat oven to 375F.",
+    "Mix dry ingredients in a bowl.",
+    "Have your little chef stir in the wet ingredients.",
+    "Fold in the chopped apple.",
+    "Spoon into muffin tins.",
+    "Bake 18-20 minutes until golden."
+   ],
+   "tier": "little",
+   "title": "Apple Cinnamon Snack Muffins"
+  },
+  {
+   "cook_time": 0,
+   "created_at": "2026-09-07T04:21:31.596271+00:00",
+   "description": "Kid-driven wraps that teach food groups and knife safety.",
+   "homeschool_topic": "Nutrition & Food Groups",
+   "id": "af0260d1-7652-4d0a-9ec4-b9de54714f1a",
+   "ingredients": [
+    "4 large tortillas",
+    "1 cup hummus",
+    "1 bell pepper, sliced",
+    "1 carrot, shredded",
+    "1 cup spinach",
+    "1/2 cucumber, sliced"
+   ],
+   "is_sample": true,
+   "lesson_plan": "Identify each color and what nutrients it provides.",
+   "photo_url": "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=800",
+   "prep_time": 15,
+   "published_at": "2026-09-07T04:21:31.596270+00:00",
+   "servings": 4,
+   "steps": [
+    "Lay tortillas flat.",
+    "Spread hummus on each.",
+    "Add veggies in a rainbow line.",
+    "Roll tightly and slice."
+   ],
+   "tier": "junior",
+   "title": "Rainbow Veggie Wraps"
+  },
+  {
+   "cook_time": 15,
+   "created_at": "2026-09-07T04:21:31.596280+00:00",
+   "description": "Independent recipe with meal costing worksheet.",
+   "homeschool_topic": "Meal Costing & Math",
+   "id": "7b765bbd-ec97-41ea-b913-a8f4b81bdf3c",
+   "ingredients": [
+    "1 lb chicken breast",
+    "2 cups broccoli",
+    "1 bell pepper",
+    "3 cloves garlic",
+    "3 tbsp soy sauce",
+    "1 tbsp sesame oil",
+    "2 cups cooked rice"
+   ],
+   "is_sample": true,
+   "lesson_plan": "Use the meal costing worksheet to calculate cost per serving.",
+   "photo_url": "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=800",
+   "prep_time": 15,
+   "published_at": "2026-09-07T04:21:31.596278+00:00",
+   "servings": 4,
+   "steps": [
+    "Cut chicken into cubes.",
+    "Heat oil in a wok or large pan.",
+    "Cook chicken until browned.",
+    "Add garlic and veggies.",
+    "Stir in soy sauce.",
+    "Serve over rice."
+   ],
+   "tier": "teen",
+   "title": "Teen Chef Chicken Stir-Fry"
+  },
+  {
+   "cook_time": 15,
+   "created_at": "2026-09-07T04:21:31.596287+00:00",
+   "description": "Weeknight-fast, one pan, minimal cleanup.",
+   "homeschool_topic": "Time Management",
+   "id": "e3f8fcfb-0eb2-4614-b63d-19bf730912e2",
+   "ingredients": [
+    "4 salmon fillets",
+    "1 lb asparagus",
+    "2 tbsp olive oil",
+    "2 cloves garlic minced",
+    "1 lemon",
+    "salt and pepper"
+   ],
+   "is_sample": false,
+   "lesson_plan": "Discuss oven temperature conversions (F to C).",
+   "photo_url": "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800",
+   "prep_time": 5,
+   "published_at": "2026-09-07T04:21:31.596285+00:00",
+   "servings": 4,
+   "steps": [
+    "Preheat oven to 425F.",
+    "Toss asparagus with oil, garlic, salt.",
+    "Place salmon on the sheet pan with asparagus.",
+    "Squeeze lemon over.",
+    "Bake 12-15 minutes until salmon flakes."
+   ],
+   "tier": "adult",
+   "title": "20-Minute Sheet Pan Salmon"
+  },
+  {
+   "cook_time": 15,
+   "created_at": "2026-09-07T04:21:31.596294+00:00",
+   "description": "Family-favorite tacos ready in 20 minutes.",
+   "homeschool_topic": "Cultural Cuisine",
+   "id": "8420b592-f937-4ea7-b1c4-233e14b4a607",
+   "ingredients": [
+    "1 lb ground beef",
+    "1 packet taco seasoning",
+    "8 tortillas",
+    "shredded lettuce",
+    "diced tomato",
+    "shredded cheese",
+    "sour cream"
+   ],
+   "is_sample": false,
+   "lesson_plan": "Explore the origin of tacos and Mexican culinary traditions.",
+   "photo_url": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800",
+   "prep_time": 5,
+   "published_at": "2026-09-07T04:21:31.596292+00:00",
+   "servings": 4,
+   "steps": [
+    "Brown beef in a skillet.",
+    "Add seasoning and 1/2 cup water.",
+    "Simmer 5 minutes.",
+    "Warm tortillas.",
+    "Assemble tacos with toppings."
+   ],
+   "tier": "adult",
+   "title": "Weeknight Beef Tacos"
+  },
+  {
+   "cook_time": 0,
+   "created_at": "2026-09-07T04:21:31.596303+00:00",
+   "description": "Threading practice for fine motor skills.",
+   "homeschool_topic": "Colors & Patterns",
+   "id": "502ef474-b8a0-4f5e-8188-d09af0fd0bce",
+   "ingredients": [
+    "strawberries",
+    "orange slices",
+    "pineapple chunks",
+    "green grapes",
+    "blueberries",
+    "wooden skewers"
+   ],
+   "is_sample": false,
+   "lesson_plan": "Identify rainbow order (ROY G BIV) with the fruit colors.",
+   "photo_url": "https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=800",
+   "prep_time": 10,
+   "published_at": "2026-09-07T04:21:31.596301+00:00",
+   "servings": 6,
+   "steps": [
+    "Wash and prep fruit.",
+    "Thread fruit onto skewers in rainbow order.",
+    "Chill and serve."
+   ],
+   "tier": "little",
+   "title": "Rainbow Fruit Kabobs"
+  }
+ ],
+ "settings": [
+  {
+   "key": "feature_flags",
+   "value": {
+    "personalized_pdf_export": false
+   }
+  },
+  {
+   "key": "featured_recipe",
+   "value": {
+    "ends_at": null,
+    "recipe_id": "502ef474-b8a0-4f5e-8188-d09af0fd0bce",
+    "starts_at": null
+   }
+  },
+  {
+   "key": "etsy_url",
+   "value": {
+    "url": ""
+   }
+  }
+ ],
+ "source": "preview"
+}
