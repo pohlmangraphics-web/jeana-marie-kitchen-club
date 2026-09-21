@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend-only verification of Jeana Marie's Kitchen Club wording decisions (Family Kitchen tier, Five Books heading, audience sentence, meta tags, forbidden phrases, dashboard/library/book routes, legacy /adult redirect, teen recipe). All 31 substantive assertions pass. Ran frontend unit tests: 43/43 pass across 3 suites (tiers.test.js, wording.test.js, api.test.js). One important environmental note: /app/frontend/public/index.html changes to <meta> tags were NOT reflected on the served page until the frontend service was restarted (CRA dev-server does not hot-reload public/index.html). After 'sudo supervisorctl restart frontend' the served HTML matched the approved copy exactly. No emails were sent, no Stripe calls, no data mutations.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/frontend/src/lib/tiers.test.js",
+    "/app/frontend/src/lib/wording.test.js",
+    "/app/frontend/src/lib/api.test.js"
+  ],
+  "action_items": [
+    "None — all wording checks pass in Preview after the required frontend restart. Main agent should be aware that whenever public/index.html is edited, `sudo supervisorctl restart frontend` is required for the CRA dev-server to pick it up (hot-reload does not cover index.html)."
+  ],
+  "critical_code_review_comments": [
+    "Landing page correctly exposes data-testid=audience-sentence, tier-skills-{key}, skills-section, and pricing lookup-key testids — good testability.",
+    "tiers.js LEGACY map ({adult: 'family'}) plus normalizeTier() cleanly handles legacy /app/book/adult URL by rendering the Family Kitchen book — verified via Playwright.",
+    "public/index.html <meta> tags are static (correct approach), but note that any future copy edits to index.html require a frontend restart in dev; consider documenting this in README to avoid confusion."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only test as requested)", "frontend": "100% (31/31 wording assertions + 43/43 unit tests)"},
+  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! — used to reach /app dashboard, /app/library, /app/book/* (admin redirects to /admin by default, then navigated manually to /app routes).",
+  "seed_data_creation": "None — read-only verification.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Wording verified as of iter16: Family Kitchen tier skills contain em-dash (U+2014) — do NOT accept a plain hyphen. Meta description/og:description must be exact. legacy /app/book/adult must still render h1='Family Kitchen'. Frontend must be restarted after any public/index.html edit for CRA to serve updated meta tags. Frontend unit tests: cd /app/frontend && CI=true yarn craco test --watchAll=false src/lib → 3 suites, 43 tests, all passing. Public URL: https://recipe-journal-club.preview.emergentagent.com.",
+  "rca of the issue": "Initial run showed served <meta name=description> containing legacy 'Cooking and learning activities for families.' text plus duplicated audience content. Root cause: CRA dev-server serves public/index.html from an in-memory copy taken at process start; edits made after start are not hot-reloaded. Mitigation: sudo supervisorctl restart frontend after modifying public/index.html. After restart, curl of raw HTML and Playwright evaluate both returned the exact approved strings, and all downstream checks passed."
+}
