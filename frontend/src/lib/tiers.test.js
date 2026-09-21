@@ -11,7 +11,7 @@ test("five tiers in approved order with approved names, ages and skills", () => 
     "Practice recipes, measurement, nutrition, kitchen safety, reading, and math.",
     "Build skills in meal planning, food science, budgeting, nutrition, and cooking techniques.",
     "Develop independent cooking, meal costing, grocery shopping, nutrition, and practical life skills.",
-    "Recipes and resources for parents, caregivers, and the whole household; not a child age tier.",
+    "Practical recipes, meal planning, budgeting, and everyday cooking for the whole household—including weeknight meals designed for busy families.",
   ]);
 });
 

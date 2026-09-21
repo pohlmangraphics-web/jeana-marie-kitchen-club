@@ -12,7 +12,7 @@ export const TIERS = [
     skills: "Develop independent cooking, meal costing, grocery shopping, nutrition, and practical life skills.",
     color: "bg-espresso/5 border-espresso/20", accent: "text-espresso" },
   { key: "family", name: "Family Kitchen", ages: "Whole household", short: "All ages", emoji: "🍳",
-    skills: "Recipes and resources for parents, caregivers, and the whole household; not a child age tier.",
+    skills: "Practical recipes, meal planning, budgeting, and everyday cooking for the whole household—including weeknight meals designed for busy families.",
     color: "bg-cream border-honey", accent: "text-terracotta" },
 ];
 
