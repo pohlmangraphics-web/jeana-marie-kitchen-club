@@ -1,0 +1,32 @@
+{
+  "summary": "Read-only end-to-end verification of the family-member download of printable 924178ba-9f25-45c3-a6a8-f82530f0c1b3 'Food Group Match'. Backend: 6/6 pytest cases pass — printables list has exactly 8 items with one 'Food Group Match' (junior/food_id, correct description), tier=junior filter includes it, PDF endpoint returns 200 application/pdf with Content-Disposition attachment; filename=\"Food_Group_Match.pdf\", Content-Length=102663, body starts with %PDF, pypdf reads exactly 1 page, sha256 matches source URL, unauth returns 401, sibling record 6894d221 still downloads 200 with 1 page, and post-run state confirms 8 printables and pdf_file_id=7be730c8-6391-4bc2-a27c-a8b2249b8ad2. Frontend: logged in as demo@family.com, /app/printables → click [data-testid=printable-tier-junior] → 'Food Group Match' card visible with description, click [data-testid=printable-download-...] triggered a real Playwright download of 102663 bytes starting with %PDF, no error toasts, no page errors. No emails sent, no Stripe calls, no data mutations.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Printables download suggested filename", "issue": "Backend correctly serves Content-Disposition filename=\"Food_Group_Match.pdf\" (underscores), but Printables.jsx download() overrides it with `a.download = ${p.title}.pdf`, so the browser's suggested_filename becomes 'Food Group Match.pdf' (with spaces). File contents are identical/correct (102663 bytes, %PDF). If the underscore filename is a hard requirement, switch to a direct <a href> with same-origin token or preserve backend CD by not setting `a.download`.", "affected_selectors": ["[data-testid=printable-download-924178ba-9f25-45c3-a6a8-f82530f0c1b3]"]}
+    ],
+    "design_issues": [
+      {"screen": "/app/printables (junior tier)", "issues": ["Three seeded coloring printables in the junior tier show title 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA...' and description 'd' — looks like placeholder/test seed data leaking into the Family Learning Library UI. Not in the scope of this task but worth flagging."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration17_printable_food_group.py",
+    "/app/test_reports/pytest/iter17.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: If the browser-suggested filename must be 'Food_Group_Match.pdf' (matching backend Content-Disposition), remove `a.download = ...` in /app/frontend/src/pages/Printables.jsx download() (or set it to the sanitized underscore name). Currently frontend forces 'Food Group Match.pdf' (spaces).",
+    "SEPARATE: Investigate 3 seeded junior coloring printables with title/description 'AAAA…'/'d' — appears to be placeholder data in seeded catalog."
+  ],
+  "critical_code_review_comments": [
+    "Printables.jsx uses fetch → blob → a.download which loses the backend's canonical Content-Disposition filename. Prefer letting the server dictate the filename (or mirror it exactly) to keep FE/BE consistent.",
+    "Good use of data-testid on tier buttons, card container, and per-card download button — made the UI test trivial and robust."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (6/6)", "frontend": "100% (card + download flow)"},
+  "test_credentials": "demo@family.com / DemoFamily123! (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "None — read-only verification.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoint GET /api/printables/{id}/pdf works and correctly serves Content-Disposition filename=\"Food_Group_Match.pdf\". Frontend Printables.jsx overrides with `a.download = ${title}.pdf`, causing browser to save as 'Food Group Match.pdf'. Total printables is 8. Junior tier contains 3 obvious placeholder coloring records (title 'AAAA…'). No email/Stripe touched. Regression file: /app/backend/tests/test_iteration17_printable_food_group.py."
+}
