@@ -4,6 +4,7 @@ import { api, API, errorMessage } from "../lib/api";
 import { toast } from "sonner";
 import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
+import { TIER_KEYS, tierLabel, normalizeTier } from "../lib/tiers";
 import { EmailProviderStatus } from "../components/EmailProviderStatus";
 import { WeeklyDropPreviewButton } from "../components/WeeklyDropPreviewButton";
 import { GenerateCardButton } from "../components/GenerateCardButton";
@@ -51,7 +52,7 @@ async function uploadFile(file, purpose) {
   return res.json();
 }
 
-const BLANK_RECIPE = { title: "", tier: "adult", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", photo_file_id: null, recipe_card_file_id: null, categories: [], homeschool_topic: "", lesson_plan: "", is_sample: false };
+const BLANK_RECIPE = { title: "", tier: "family", description: "", ingredients: "", steps: "", prep_time: 10, cook_time: 15, servings: 4, photo_url: "", photo_file_id: null, recipe_card_file_id: null, categories: [], homeschool_topic: "", lesson_plan: "", is_sample: false };
 const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Holiday"];
 
 function RecipesAdmin() {
@@ -74,7 +75,7 @@ function RecipesAdmin() {
   const startEdit = (r) => {
     setEditingId(r.id);
     setF({
-      title: r.title || "", tier: r.tier || "adult", description: r.description || "",
+      title: r.title || "", tier: normalizeTier(r.tier) || "family", description: r.description || "",
       ingredients: (r.ingredients || []).join("\n"),
       steps: (r.steps || []).join("\n"),
       prep_time: r.prep_time ?? 10, cook_time: r.cook_time ?? 15, servings: r.servings ?? 4,
@@ -165,7 +166,7 @@ function RecipesAdmin() {
         </div>
         <input data-testid="admin-recipe-title" required placeholder="Title" value={f.title} onChange={(e) => setF({...f, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <select data-testid="admin-recipe-tier" value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">
-          {["little","junior","teen","adult"].map(t => <option key={t} value={t}>{t}</option>)}
+          {TIER_KEYS.map(t => <option key={t} value={t}>{tierLabel(t)}</option>)}
         </select>
         <textarea data-testid="admin-recipe-desc" placeholder="Description" value={f.description} onChange={(e) => setF({...f, description: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <textarea data-testid="admin-recipe-ingredients" placeholder="Ingredients (one per line)" rows={4} value={f.ingredients} onChange={(e) => setF({...f, ingredients: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
@@ -330,7 +331,7 @@ function PrintablesAdmin() {
         </div>
         <input data-testid="admin-printable-title" required placeholder="Title" value={f.title} onChange={(e) => setF({...f, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>
         <div className="grid grid-cols-2 gap-2">
-          <select data-testid="admin-printable-tier" value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["little","junior","teen","adult"].map(t => <option key={t} value={t}>{t}</option>)}</select>
+          <select data-testid="admin-printable-tier" value={f.tier} onChange={(e) => setF({...f, tier: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{TIER_KEYS.map(t => <option key={t} value={t}>{tierLabel(t)}</option>)}</select>
           <select data-testid="admin-printable-kind" value={f.kind} onChange={(e) => setF({...f, kind: e.target.value})} className="px-3 py-2 rounded-lg border-2 border-espresso/10 bg-white">{["coloring","food_id","shopping_list","meal_costing","lesson_plan"].map(t => <option key={t} value={t}>{t}</option>)}</select>
         </div>
         <textarea data-testid="admin-printable-desc" placeholder="Description" value={f.description} onChange={(e) => setF({...f, description: e.target.value})} className="w-full px-3 py-2 rounded-lg border-2 border-espresso/10"/>

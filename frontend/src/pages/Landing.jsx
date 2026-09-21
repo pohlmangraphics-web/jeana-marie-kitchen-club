@@ -7,12 +7,7 @@ import { api } from "../lib/api";
 import { useFlags } from "../lib/flags";
 import { ChefHat, BookOpen, Sparkles, Printer, Users, Calendar } from "lucide-react";
 
-const TIERS = [
-  { key: "little", name: "Little Chefs", ages: "3–5", emoji: "🧒", desc: "Parent-guided cooking, coloring pages, food identification worksheets." },
-  { key: "junior", name: "Junior Cooks", ages: "6–9", emoji: "👦", desc: "Supervised recipes, kitchen skills, blank shopping list worksheets." },
-  { key: "teen", name: "Teen Kitchen", ages: "10–15", emoji: "👩‍🍳", desc: "Independent recipes plus meal costing worksheets for real-world math." },
-  { key: "adult", name: "Mom & Dad — Quick & Easy", ages: "Grown-ups", emoji: "🍳", desc: "Flagship weeknight meals ready in 20–30 minutes." },
-];
+import { TIERS, AUDIENCE_SENTENCE, TAGLINE } from "../lib/tiers";
 
 export default function Landing() {
   const [samples, setSamples] = useState([]);
@@ -38,7 +33,7 @@ export default function Landing() {
             <h1 className="mt-6 serif text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.05] text-espresso">
               Cook, learn, and <span className="script text-terracotta font-normal text-6xl sm:text-7xl lg:text-8xl">savor</span> together.
             </h1>
-            <p className="mt-2 script text-2xl text-terracotta">Cooking and learning activities for homeschool families</p>
+            <p className="mt-2 script text-2xl text-terracotta">{TAGLINE}</p>
             <p className="mt-6 text-lg text-muted2 max-w-xl leading-relaxed">
               Chef Jeana Marie brings more than 30 years of professional cooking experience to your family's kitchen. Every week, members receive age-appropriate recipes, printable learning activities and practical kitchen lessons that help children build confidence and lifelong skills.
             </p>
@@ -70,17 +65,18 @@ export default function Landing() {
       {/* Age tiers */}
       <section className="max-w-7xl mx-auto px-6 py-20">
         <div className="max-w-2xl">
-          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Four Books, One Club</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Five Books, One Club</p>
           <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">A kitchen learning experience that grows with your family.</h2>
           <p className="mt-4 text-muted2">Age-tiered content updated every week. Parents choose which book each family member can open.</p>
+          <p data-testid="audience-sentence" className="mt-3 text-sm font-semibold text-espresso">{AUDIENCE_SENTENCE}</p>
         </div>
-        <div className="mt-12 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div data-testid="skills-section" className="mt-12 grid md:grid-cols-2 lg:grid-cols-5 gap-6">
           {TIERS.map((t) => (
             <div key={t.key} data-testid={`tier-card-${t.key}`} className="card-warm p-6 hover:-translate-y-1 transition-transform">
               <div className="text-5xl">{t.emoji}</div>
               <p className="mt-4 text-xs uppercase tracking-widest text-terracotta font-bold">{t.ages}</p>
               <h3 className="mt-1 serif text-2xl font-bold text-espresso">{t.name}</h3>
-              <p className="mt-3 text-sm text-muted2 leading-relaxed">{t.desc}</p>
+              <p data-testid={`tier-skills-${t.key}`} className="mt-3 text-sm text-muted2 leading-relaxed">{t.skills}</p>
             </div>
           ))}
         </div>
@@ -112,13 +108,13 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Homeschool differentiator */}
+      {/* Printables differentiator */}
       <section className="max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <img src="https://images.unsplash.com/photo-1713942589752-6c6bb58ca8b6?w=900" alt="Homeschool cooking" className="rounded-3xl shadow-xl -rotate-1"/>
+          <img src="https://images.unsplash.com/photo-1713942589752-6c6bb58ca8b6?w=900" alt="Family cooking together" className="rounded-3xl shadow-xl -rotate-1"/>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Supplemental Homeschool Enrichment</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-sage font-bold">Supplemental Family Enrichment</p>
           <h2 className="mt-3 serif text-4xl sm:text-5xl font-black text-espresso">Printable worksheets that actually teach.</h2>
           <ul className="mt-6 space-y-4">
             <li className="flex gap-4"><Printer className="w-6 h-6 text-terracotta shrink-0 mt-1"/><div><p className="font-bold text-espresso">Coloring pages & food-ID sheets</p><p className="text-sm text-muted2">For Little Chefs learning kitchen tools and food groups.</p></div></li>

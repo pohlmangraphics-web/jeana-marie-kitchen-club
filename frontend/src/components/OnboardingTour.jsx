@@ -10,7 +10,7 @@ const STEPS = [
   },
   {
     title: "Our Recipe Books",
-    body: "You have access to all four books — Little Chefs, Junior Cooks, Teen Kitchen, and Mom & Dad. Open any one anytime, no profile needed.",
+    body: "You have access to all five books — Little Chefs, Junior Cooks, Young Chefs, Teen Kitchen, and the Family Kitchen. Open any one anytime, no profile needed.",
     cta: "Next",
   },
   {

@@ -41,7 +41,7 @@ export default function Privacy() {
               <li>Email address and family name at signup.</li>
               <li>A password hash (we never store your password in plain text — passwords are hashed with bcrypt).</li>
               <li>Payment information is handled by Stripe. The Club never sees, stores, or transmits your full card number.</li>
-              <li>Optional information you choose to enter: journal notes, favorites, meal costing entries, uploaded photos (adult-account only, when the feature is enabled).</li>
+              <li>Optional information you choose to enter: journal notes, favorites, meal costing entries, uploaded photos (parent-account only, when the feature is enabled).</li>
               <li>Basic technical logs (IP address, browser type) used for security and rate limiting.</li>
             </ul>
           </div>

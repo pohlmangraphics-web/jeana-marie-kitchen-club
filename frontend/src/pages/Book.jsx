@@ -4,7 +4,7 @@ import Nav from "../components/Nav";
 import { api } from "../lib/api";
 import { Search } from "lucide-react";
 
-const TIERS = { little: "Little Chefs", junior: "Junior Cooks", teen: "Teen Kitchen", adult: "Mom & Dad — Quick & Easy" };
+import { tierByKey, tierName } from "../lib/tiers";
 
 export default function Book() {
   const { tier } = useParams();
@@ -27,7 +27,7 @@ export default function Book() {
       <Nav/>
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="script text-3xl text-terracotta">The Book of</p>
-        <h1 className="serif text-4xl sm:text-6xl font-black text-espresso">{TIERS[tier]}</h1>
+        <h1 className="serif text-4xl sm:text-6xl font-black text-espresso">{tierName(tier)}</h1>
 
         <div className="mt-6 relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted2"/>

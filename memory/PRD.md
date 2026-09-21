@@ -111,6 +111,12 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - `backend/tools/import_content_bundle.py`: dry-run default; `--apply` + `APP_ENV=production` required; refuses DB_NAME matching preview/test/dev/staging/local/sandbox; $setOnInsert upserts by UUID; aborts on differing content, same-title/different-id, or differing setting; whitelisted collections/settings only.
 - `seed.py`: starter recipes/printables now require `SEED_STARTER_CONTENT=true` and non-production. Tests `test_content_bundle_tools.py` 8/8 (scratch DB, dropped).
 
+## Jun 2026 Update — Audience & age-tier restructure (Preview)
+- Tiers: little (3–5) · junior (6–9) · **young (10–12, new)** · teen (13–15+) · **family (was adult)**. Backend `TIER_KEYS`, `normalize_tier` (adult→family at validation), `_tier_query` (filters match legacy alias), `_out_tier` (responses). Frontend `lib/tiers.js` single source (names/ages/skills/AUDIENCE_SENTENCE/TAGLINE).
+- Preview data migration: recipes 2 (Salmon, Tacos), profiles 1, printables 0: adult→family. Teen Chef Chicken Stir-Fry kept in Teen Kitchen (flag for owner review: 13–15+ vs Young Chefs).
+- Wording: homeschool only in approved audience sentence (Landing, Footer, FAQ); tagline "Cooking and learning activities for families"; index.html meta; gift-cert PDF tagline; printable PDF/recipe-card labels via TIER_LABEL. Tests: `test_tiers.py` 7/7, `tiers.test.js` + `wording.test.js` (frontend lib 43/43).
+- **STALE: `backend/content_bundle.json` still contains tier "adult" for 2 recipes — regenerate after approval before any Live import.**
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)

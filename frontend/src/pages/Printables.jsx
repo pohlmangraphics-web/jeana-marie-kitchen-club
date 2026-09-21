@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import { api, API } from "../lib/api";
 import { Download, Printer } from "lucide-react";
+import { TIER_KEYS, tierName } from "../lib/tiers";
 
 const KIND_LABEL = { coloring: "Coloring Page", food_id: "Food ID", shopping_list: "Shopping List", meal_costing: "Meal Costing", lesson_plan: "Family Learning Guide" };
 
@@ -32,10 +33,10 @@ export default function Printables() {
         <p className="mt-2 text-muted2">Print-ready 8.5×11 PDFs. Coloring pages, worksheets, shopping lists, meal costing sheets, and weekly family learning guides.</p>
 
         <div className="mt-6 flex gap-2 flex-wrap">
-          {["", "little", "junior", "teen", "adult"].map(t => (
+          {["", ...TIER_KEYS].map(t => (
             <button data-testid={`printable-tier-${t || "all"}`} key={t} onClick={() => setTier(t)}
               className={`btn-pill !py-2 !px-4 text-sm ${tier === t ? "btn-primary" : "btn-outline"}`}>
-              {t ? t.charAt(0).toUpperCase() + t.slice(1) : "All"}
+              {t ? tierName(t) : "All"}
             </button>
           ))}
         </div>

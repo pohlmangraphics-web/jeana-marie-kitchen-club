@@ -4,15 +4,15 @@ import Footer, { DISCLAIMER } from "../components/Footer";
 const FAQS = [
   {
     q: "Is Jeana Marie's Kitchen Club a school?",
-    a: "No. We provide family cooking activities and supplemental educational enrichment. We are not a school, accredited educational program, or provider of academic credit. Parents and guardians decide how activities fit into their family's homeschool requirements.",
+    a: "No. We provide family cooking activities and supplemental educational enrichment. We are not a school, accredited educational program, or provider of academic credit. Parents and guardians decide how activities fit into their family's learning goals. Created for families, homeschoolers, after-school learning, community groups, and children who simply enjoy cooking.",
   },
   {
-    q: "Who are the four age tiers for?",
-    a: "Little Chefs (3–5), Junior Cooks (6–9), Teen Kitchen (10–15), and Mom & Dad — Quick & Easy. Each tier is age-tailored, but every family member gets access with a single family membership.",
+    q: "Who are the age tiers for?",
+    a: "Little Chefs (ages 3–5), Junior Cooks (ages 6–9), Young Chefs (ages 10–12), and Teen Kitchen (ages 13–15+), plus the Family Kitchen for parents, caregivers, and the whole household. Each tier is age-tailored, but every family member gets access with a single family membership.",
   },
   {
     q: "How often are new recipes and activities published?",
-    a: "Weekly. Chef Jeana Marie publishes new recipes and printable family learning guides every week across all four age tiers.",
+    a: "Weekly. Chef Jeana Marie publishes new recipes and printable family learning guides every week across all age tiers and the Family Kitchen.",
   },
   {
     q: "What comes with a membership?",

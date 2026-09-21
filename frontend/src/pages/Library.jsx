@@ -4,13 +4,8 @@ import Nav from "../components/Nav";
 import { api } from "../lib/api";
 import { Search, Filter } from "lucide-react";
 
-const TIERS = [
-  { key: "", label: "All Books" },
-  { key: "little", label: "Little Chefs (3–5)" },
-  { key: "junior", label: "Junior Cooks (6–9)" },
-  { key: "teen", label: "Teen Kitchen (10–15)" },
-  { key: "adult", label: "Mom & Dad" },
-];
+import { TIERS as ALL_TIERS, tierLabel } from "../lib/tiers";
+const TIERS = [{ key: "", label: "All Books" }, ...ALL_TIERS.map((t) => ({ key: t.key, label: tierLabel(t.key) }))];
 const CATEGORIES = ["Breakfast", "Lunch", "Dinner", "Snack", "Dessert", "Holiday"];
 
 export default function Library() {
@@ -44,7 +39,7 @@ export default function Library() {
       <div className="max-w-7xl mx-auto px-6 py-10">
         <p className="script text-3xl text-terracotta">The Complete Archive</p>
         <h1 className="serif text-4xl sm:text-6xl font-black text-espresso">Recipe Library</h1>
-        <p className="mt-2 text-muted2 max-w-2xl">Every recipe Chef Jeana Marie has ever published, across all four books. Available to every active family membership — every book, every family member.</p>
+        <p className="mt-2 text-muted2 max-w-2xl">Every recipe Chef Jeana Marie has ever published, across all five books. Available to every active family membership — every book, every family member.</p>
 
         <div className="mt-8 flex flex-wrap gap-4 items-center">
           <div className="relative flex-1 min-w-[240px] max-w-md">

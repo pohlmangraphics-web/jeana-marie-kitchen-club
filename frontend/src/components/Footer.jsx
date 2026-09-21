@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
+import { TAGLINE, AUDIENCE_SENTENCE } from "../lib/tiers";
 
-export const DISCLAIMER = "Jeana Marie's Kitchen Club provides family cooking activities and supplemental educational enrichment. It is not a school, accredited educational program or provider of academic credit. Parents and guardians are responsible for selecting, supervising and documenting activities according to their family's homeschool requirements.";
+export const DISCLAIMER = "Jeana Marie's Kitchen Club provides family cooking activities and supplemental educational enrichment. It is not a school, accredited educational program or provider of academic credit. Parents and guardians are responsible for selecting, supervising and documenting activities according to their family's learning goals and any local requirements.";
 
 export default function Footer() {
   return (
@@ -9,7 +10,8 @@ export default function Footer() {
         <div>
           <p className="script text-3xl text-terracotta">Jeana Marie's</p>
           <p className="serif text-lg text-espresso font-bold -mt-1">Kitchen Club</p>
-          <p className="mt-3 italic">Cooking and learning activities for homeschool families.</p>
+          <p className="mt-3 italic">{TAGLINE}.</p>
+          <p className="mt-2 text-xs">{AUDIENCE_SENTENCE}</p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-widest text-sage font-bold">Explore</p>
@@ -26,7 +28,7 @@ export default function Footer() {
           <p data-testid="footer-disclaimer" className="mt-3 text-xs leading-relaxed">{DISCLAIMER}</p>
         </div>
       </div>
-      <div className="text-center text-xs text-muted2 pb-6">© {new Date().getFullYear()} Jeana Marie's Kitchen Club. Made with love for homeschool families.</div>
+      <div className="text-center text-xs text-muted2 pb-6">© {new Date().getFullYear()} Jeana Marie's Kitchen Club. Made with love for families who cook together.</div>
     </footer>
   );
 }

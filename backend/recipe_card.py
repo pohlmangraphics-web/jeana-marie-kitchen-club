@@ -15,7 +15,8 @@ logger = logging.getLogger(__name__)
 FONT_DIR = "/usr/share/fonts/truetype/liberation"
 VENDOR_FONT_DIR = str(Path(__file__).resolve().parent / "fonts")
 ESPRESSO, MUTED, TERRACOTTA, HONEY, SAGE, CREAM = (44, 30, 22), (92, 74, 61), (224, 122, 95), (242, 204, 143), (129, 178, 154), (253, 251, 247)
-TIER_LABEL = {"little": "Little Chefs (ages 3-5)", "junior": "Junior Chefs (ages 6-9)", "teen": "Teen Chefs (ages 10-15)", "adult": "Adult Kitchen"}
+TIER_LABEL = {"little": "Little Chefs (ages 3-5)", "junior": "Junior Cooks (ages 6-9)", "young": "Young Chefs (ages 10-12)",
+              "teen": "Teen Kitchen (ages 13-15+)", "family": "Family Kitchen", "adult": "Family Kitchen"}
 PAGE_W, MARGIN = 215.9, 16
 CONTENT_W = PAGE_W - 2 * MARGIN
 IMG_W, IMG_H = 70, 52  # mm, fixed frame; image is center-cropped to this ratio

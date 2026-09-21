@@ -15,7 +15,7 @@ import uuid
 import secrets
 import string
 from pathlib import Path
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import List, Optional, Literal, Dict, Any
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -172,18 +172,48 @@ class FeaturedReq(BaseModel):
     recipe_id: Optional[str] = None
     starts_at: Optional[str] = None
     ends_at: Optional[str] = None
+# ---- Audience tiers (public labels live in frontend/src/lib/tiers.js and recipe_card.TIER_LABEL) ----
+TIER_KEYS = ("little", "junior", "young", "teen", "family")
+LEGACY_TIER_ALIASES = {"adult": "family"}  # pre-restructure records/profiles used "adult"
+TierName = Literal["little", "junior", "young", "teen", "family", "adult"]
+
+def normalize_tier(t: Optional[str]) -> Optional[str]:
+    if t is None: return None
+    t = LEGACY_TIER_ALIASES.get(str(t).strip().lower(), str(t).strip().lower())
+    if t not in TIER_KEYS: raise HTTPException(422, f"Unknown tier {t!r}")
+    return t
+
+def _tier_query(t: str) -> dict:
+    """Match canonical tier and any legacy alias still stored."""
+    t = normalize_tier(t)
+    legacy = [k for k, v in LEGACY_TIER_ALIASES.items() if v == t]
+    return {"$in": [t, *legacy]} if legacy else t
+
+def _out_tier(doc: dict) -> dict:
+    if doc and "tier" in doc and doc["tier"] in LEGACY_TIER_ALIASES: doc["tier"] = LEGACY_TIER_ALIASES[doc["tier"]]
+    return doc
+
 class ProfileCreate(BaseModel):
     name: str
-    tier: Literal["little", "junior", "teen", "adult"]
+    tier: TierName
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     avatar_emoji: str = "🧒"
 class ProfileUpdate(BaseModel):
     name: Optional[str] = None
-    tier: Optional[Literal["little", "junior", "teen", "adult"]] = None
+    tier: Optional[TierName] = None
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     avatar_emoji: Optional[str] = None
     photo_opt_in: Optional[bool] = None
 class RecipeBody(BaseModel):
     title: str
-    tier: Literal["little", "junior", "teen", "adult"]
+    tier: TierName
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     description: str
     ingredients: List[str]
     steps: List[str]
@@ -200,6 +230,9 @@ class RecipeBody(BaseModel):
     is_sample: bool = False
 class RecipePatch(BaseModel):
     title: Optional[str] = None; tier: Optional[str] = None; description: Optional[str] = None
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     ingredients: Optional[List[str]] = None; steps: Optional[List[str]] = None
     prep_time: Optional[int] = None; cook_time: Optional[int] = None; servings: Optional[int] = None
     photo_file_id: Optional[str] = None; photo_url: Optional[str] = None
@@ -209,10 +242,16 @@ class RecipePatch(BaseModel):
     published_at: Optional[str] = None; is_sample: Optional[bool] = None
 class PrintableBody(BaseModel):
     title: str; tier: str; kind: str; description: str; content: str = ""
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     pdf_file_id: Optional[str] = None
     thumbnail_file_id: Optional[str] = None
 class PrintablePatch(BaseModel):
     title: Optional[str] = None; tier: Optional[str] = None; kind: Optional[str] = None
+    @field_validator("tier")
+    @classmethod
+    def _norm_tier(cls, v): return normalize_tier(v)
     description: Optional[str] = None; content: Optional[str] = None
     pdf_file_id: Optional[str] = None; thumbnail_file_id: Optional[str] = None
 class JournalCreate(BaseModel):
@@ -466,7 +505,7 @@ async def download_file(file_id: str, auth: Optional[str] = Query(None), authori
 # --- Profiles ---
 @api.get("/profiles")
 async def list_profiles(user=Depends(get_current_user)):
-    return await db.profiles.find({"user_id": user["id"]}, {"_id": 0}).to_list(20)
+    return [_out_tier(p) for p in await db.profiles.find({"user_id": user["id"]}, {"_id": 0}).to_list(20)]
 
 @api.post("/profiles")
 async def create_profile(body: ProfileCreate, user=Depends(get_current_user)):
@@ -533,10 +572,10 @@ async def this_week(user=Depends(get_current_user)):
 async def list_recipes(tier: Optional[str] = None, q: Optional[str] = None, category: Optional[str] = None, user=Depends(get_current_user)):
     if not has_active_membership(user): raise HTTPException(402, "Active membership required")
     query: Dict[str, Any] = {}
-    if tier: query["tier"] = tier
+    if tier: query["tier"] = _tier_query(tier)
     if q: query["title"] = {"$regex": q, "$options": "i"}
     if category: query["categories"] = category
-    return await db.recipes.find(query, {"_id": 0}).sort("published_at", -1).to_list(500)
+    return [_out_tier(r) for r in await db.recipes.find(query, {"_id": 0}).sort("published_at", -1).to_list(500)]
 
 @api.get("/recipes/{rid}")
 async def get_recipe(rid: str, user=Depends(get_current_user)):
@@ -544,7 +583,7 @@ async def get_recipe(rid: str, user=Depends(get_current_user)):
     if not r: raise HTTPException(404, "Not found")
     if not r.get("is_sample") and not has_active_membership(user):
         raise HTTPException(402, "Active membership required")
-    return r
+    return _out_tier(r)
 
 @api.post("/recipes")
 async def create_recipe(body: RecipeBody, admin=Depends(require_admin)):
@@ -754,8 +793,8 @@ async def delete_cost(cid: str, user=Depends(get_current_user)):
 @api.get("/printables")
 async def list_printables(tier: Optional[str] = None, user=Depends(get_current_user)):
     q = {}
-    if tier: q["tier"] = tier
-    return await db.printables.find(q, {"_id": 0}).to_list(500)
+    if tier: q["tier"] = _tier_query(tier)
+    return [_out_tier(p) for p in await db.printables.find(q, {"_id": 0}).to_list(500)]
 
 @api.post("/printables")
 async def create_printable(body: PrintableBody, admin=Depends(require_admin)):
@@ -799,7 +838,7 @@ async def printable_pdf(pid: str, user=Depends(get_current_user)):
     # Wrap long titles inside margins
     pdf.multi_cell(0, 12, safe_txt(p["title"]), align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "I", 12); pdf.set_text_color(224, 122, 95)
-    pdf.multi_cell(0, 7, safe_txt(f"Jeana Marie's Kitchen Club - {p['tier'].title()} Tier"), new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
+    pdf.multi_cell(0, 7, safe_txt(f"Jeana Marie's Kitchen Club - {recipe_card.TIER_LABEL.get(LEGACY_TIER_ALIASES.get(p['tier'], p['tier']), p['tier'].title())}"), new_x=XPos.LMARGIN, new_y=YPos.NEXT, align="C")
     pdf.ln(6); pdf.set_font("Helvetica", "", 12); pdf.set_text_color(44, 30, 22)
     pdf.multi_cell(0, 8, safe_txt(p.get("description", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT); pdf.ln(4)
     kind = p.get("kind")
@@ -878,7 +917,7 @@ async def gift_certificate_pdf(body: GiftCertReq, request: Request):
     pdf.set_font("Helvetica", "B", 30); pdf.set_text_color(44, 30, 22)
     pdf.cell(0, 12, safe_txt("Kitchen Club"), ln=True, align="C")
     pdf.set_font("Helvetica", "", 11); pdf.set_text_color(92, 74, 61)
-    pdf.cell(0, 6, safe_txt("Cooking and learning activities for homeschool families"), ln=True, align="C")
+    pdf.cell(0, 6, safe_txt("Cooking and learning activities for families"), ln=True, align="C")
 
     # Certificate title
     pdf.ln(14)

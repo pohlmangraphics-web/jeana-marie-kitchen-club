@@ -37,7 +37,7 @@ export default function Terms() {
           </div>
           <div>
             <h2 className="serif text-2xl font-bold">Not an Accredited Program</h2>
-            <p className="mt-2 text-muted2">Kitchen Club activities are supplemental family enrichment. We do not issue grades, credits, transcripts or certificates. Parents and guardians retain full authority and responsibility for how these activities are used within their homeschool.</p>
+            <p className="mt-2 text-muted2">Kitchen Club activities are supplemental family enrichment. We do not issue grades, credits, transcripts or certificates. Parents and guardians retain full authority and responsibility for how these activities are used within their household or learning setting.</p>
           </div>
           <div>
             <h2 className="serif text-2xl font-bold">Contact</h2>

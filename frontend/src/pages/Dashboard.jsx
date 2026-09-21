@@ -7,13 +7,7 @@ import { toast } from "sonner";
 import { Plus, BookOpen, Printer, Calculator, NotebookPen, X, Pencil, Trash2, Library as LibraryIcon, Star, Compass, Mail, CreditCard } from "lucide-react";
 import OnboardingTour, { replayTour } from "../components/OnboardingTour";
 
-const TIERS = { little: "Little Chefs (3–5)", junior: "Junior Cooks (6–9)", teen: "Teen Kitchen (10–15)", adult: "Mom & Dad" };
-const BOOKS = [
-  { key: "little", name: "Little Chefs", ages: "3–5", emoji: "🧒", color: "bg-terracotta/10 border-terracotta/30", accent: "text-terracotta" },
-  { key: "junior", name: "Junior Cooks", ages: "6–9", emoji: "👦", color: "bg-honey/30 border-honey", accent: "text-espresso" },
-  { key: "teen", name: "Teen Kitchen", ages: "10–15", emoji: "👩‍🍳", color: "bg-sage/15 border-sage/40", accent: "text-sage" },
-  { key: "adult", name: "Mom & Dad — Quick & Easy", ages: "Grown-ups", emoji: "🍳", color: "bg-espresso/5 border-espresso/20", accent: "text-espresso" },
-];
+import { TIERS as BOOKS, tierLabel } from "../lib/tiers";
 const EMOJIS = ["🧒","👦","👧","🧑","👨‍🍳","👩‍🍳","🦸","🐻","🐰","🦄"];
 const BLANK_FORM = { name: "", tier: "junior", avatar_emoji: "🧒" };
 
@@ -144,7 +138,7 @@ export default function Dashboard() {
                 <button onClick={() => selectProfile(p)} className="w-full">
                   <div className="text-6xl">{p.avatar_emoji}</div>
                   <p className="mt-3 serif font-bold text-espresso text-lg">{p.name}</p>
-                  <p className="text-xs text-muted2 mt-1">{TIERS[p.tier]}</p>
+                  <p className="text-xs text-muted2 mt-1">{tierLabel(p.tier)}</p>
                 </button>
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button data-testid={`profile-edit-${p.id}`} onClick={(e) => { e.stopPropagation(); openEdit(p); }} title="Edit"
@@ -176,7 +170,7 @@ export default function Dashboard() {
               <LibraryIcon className="w-4 h-4"/> Open Full Library
             </Link>
           </div>
-          <p className="text-xs text-muted2 mt-1">Every family membership includes access to all four books. Profiles only personalize favorites and journal — they never restrict recipes.</p>
+          <p className="text-xs text-muted2 mt-1">Every family membership includes access to all five books. Profiles only personalize favorites and journal — they never restrict recipes.</p>
           <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {BOOKS.map(b => (
               <Link data-testid={`dash-book-${b.key}`} key={b.key} to={`/app/book/${b.key}`}
@@ -280,7 +274,7 @@ export default function Dashboard() {
             <label className="text-sm font-bold">Default book / age tier</label>
             <select data-testid="profile-form-tier" value={form.tier} onChange={(e) => setForm({...form, tier: e.target.value})}
               className="mt-1 w-full px-4 py-2 rounded-xl border-2 border-espresso/10 bg-white">
-              {Object.entries(TIERS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+              {BOOKS.map((t) => <option key={t.key} value={t.key}>{tierLabel(t.key)}</option>)}
             </select>
             <p className="text-xs text-muted2 mt-1">Changing tiers keeps this profile's journal, favorites and "We Made This" history intact.</p>
             <label className="text-sm font-bold mt-4 block">Avatar</label>
