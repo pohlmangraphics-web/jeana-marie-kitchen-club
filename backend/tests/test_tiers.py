@@ -8,7 +8,7 @@ import requests
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(__file__)); sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 from creds import ADMIN, DEMO  # noqa: E402
 from dotenv import load_dotenv; load_dotenv(Path(__file__).resolve().parents[1] / ".env")  # noqa: E702
 import server  # noqa: E402
@@ -107,3 +107,18 @@ def test_pdf_labels_use_new_names():
 def test_no_homeschool_first_wording_in_backend_templates():
     src = (Path(server.__file__).parent / "server.py").read_text() + (Path(server.__file__).parent / "email_service.py").read_text()
     assert "for homeschool families" not in src
+
+
+def test_hidden_printables_invisible_to_members_but_admin_sees(admin_h, demo_h):
+    hidden = {"73e0b3f0-a355-405e-ac12-4616b63a88ce", "23b621c1-e853-4c17-9338-daa51e3334d7", "e53427b2-294d-40ae-b147-404c677b7251"}
+    member_ids = {p["id"] for p in requests.get(f"{BASE}/printables", headers=demo_h).json()}
+    admin = requests.get(f"{BASE}/printables", headers=admin_h).json()
+    assert not (hidden & member_ids)
+    assert hidden <= {p["id"] for p in admin if p.get("is_hidden")}
+    assert {"6894d221-3a53-423e-870e-a29ce6745a54", "924178ba-9f25-45c3-a6a8-f82530f0c1b3"} <= member_ids
+    for pid in hidden:
+        assert requests.get(f"{BASE}/printables/{pid}/pdf", headers=demo_h).status_code == 404
+        assert requests.get(f"{BASE}/printables/{pid}/pdf", headers=admin_h).status_code == 200
+    # export tool excludes hidden ids and refuses a hidden approved id
+    import export_content_bundle as exp  # noqa
+    assert not (hidden & set(exp.APPROVED_PRINTABLE_IDS)) and len(exp.APPROVED_PRINTABLE_IDS) == 2

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Nav from "../components/Nav";
 import { api, API, errorMessage } from "../lib/api";
 import { toast } from "sonner";
-import { Trash2, Upload, Download, Copy, Pencil, FileText, X, Star } from "lucide-react";
+import { Trash2, Upload, Download, Eye, EyeOff, Copy, Pencil, FileText, X, Star } from "lucide-react";
 import { useFlags } from "../lib/flags";
 import { TIER_KEYS, tierLabel, normalizeTier } from "../lib/tiers";
 import { EmailProviderStatus } from "../components/EmailProviderStatus";
@@ -302,6 +302,13 @@ function PrintablesAdmin() {
     } catch (err) { toast.error(errorMessage(err, "Failed")); }
     finally { setBusy(false); }
   };
+  const toggleHidden = async (p) => {
+    try {
+      await api.patch(`/printables/${p.id}`, { is_hidden: !p.is_hidden });
+      toast.success(p.is_hidden ? `"${p.title}" is visible to members again` : `"${p.title}" hidden from members`);
+      load();
+    } catch (err) { toast.error(errorMessage(err, "Couldn't update visibility")); }
+  };
   const del = async (id) => {
     if (!window.confirm("Delete this printable?")) return;
     await api.delete(`/printables/${id}`); load();
@@ -387,9 +394,12 @@ function PrintablesAdmin() {
                 <p className="text-xs text-muted2">
                   {p.tier} · {p.kind}
                   {p.pdf_file_id ? <span className="ml-1 text-sage">· 📎 Uploaded PDF</span> : <span className="ml-1 text-muted2">· Generated</span>}
+                  {p.is_hidden && <span data-testid={`admin-printable-hidden-${p.id}`} className="ml-1 text-terracotta font-bold">· Hidden from members</span>}
                 </p>
               </div>
               <div className="flex gap-1 shrink-0">
+                <button data-testid={`admin-printable-toggle-hidden-${p.id}`} onClick={() => toggleHidden(p)} title={p.is_hidden ? "Show to members" : "Hide from members"}
+                  className="p-2 rounded-lg hover:bg-honey/30 text-espresso">{p.is_hidden ? <Eye className="w-4 h-4"/> : <EyeOff className="w-4 h-4"/>}</button>
                 <button data-testid={`admin-printable-edit-${p.id}`} onClick={() => startEdit(p)} title="Edit" className="p-2 rounded-lg hover:bg-honey/30 text-espresso"><Pencil className="w-4 h-4"/></button>
                 <button data-testid={`admin-printable-del-${p.id}`} onClick={() => del(p.id)} title="Delete" className="p-2 rounded-lg hover:bg-terracotta/10 text-terracotta"><Trash2 className="w-4 h-4"/></button>
               </div>

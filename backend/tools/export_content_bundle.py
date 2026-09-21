@@ -27,18 +27,19 @@ APPROVED_RECIPE_IDS = [
     "502ef474-b8a0-4f5e-8188-d09af0fd0bce",  # Rainbow Fruit Kabobs
 ]
 APPROVED_PRINTABLE_IDS = [
-    "6894d221-3a53-423e-870e-a29ce6745a54",  # Kitchen Tools Coloring Page
-    "924178ba-9f25-45c3-a6a8-f82530f0c1b3",  # Food Group Match Worksheet
-    "73e0b3f0-a355-405e-ac12-4616b63a88ce",  # My Blank Shopping List
-    "23b621c1-e853-4c17-9338-daa51e3334d7",  # Meal Costing Worksheet
-    "e53427b2-294d-40ae-b147-404c677b7251",  # Weekly Family Learning Guide - Fractions in the Kitchen
+    "6894d221-3a53-423e-870e-a29ce6745a54",  # Food Match and Color (branded PDF)
+    "924178ba-9f25-45c3-a6a8-f82530f0c1b3",  # Food Group Match (branded PDF)
+    # Hidden until branded replacements are ready — intentionally excluded from the bundle:
+    # "73e0b3f0-a355-405e-ac12-4616b63a88ce",  My Blank Shopping List
+    # "23b621c1-e853-4c17-9338-daa51e3334d7",  Meal Costing Worksheet
+    # "e53427b2-294d-40ae-b147-404c677b7251",  Weekly Family Learning Guide - Fractions in the Kitchen
 ]
 REQUIRED_SETTINGS = ["feature_flags", "featured_recipe"]
 OPTIONAL_SETTINGS = ["etsy_url"]
 
 # Fields that must never travel (storage refs are environment-specific; analytics are Preview-only)
 RECIPE_DROP = {"_id", "photo_file_id", "recipe_card_file_id"}
-PRINTABLE_DROP = {"_id", "pdf_file_id", "thumbnail_file_id"}
+PRINTABLE_DROP = {"_id", "pdf_file_id", "thumbnail_file_id", "is_hidden"}
 BUNDLE_VERSION = 1
 
 
@@ -55,6 +56,7 @@ def build_bundle(db) -> dict:
     for pid in APPROVED_PRINTABLE_IDS:
         doc = db.printables.find_one({"id": pid})
         if not doc: sys.exit(f"export: approved printable {pid} not found")
+        if doc.get("is_hidden"): sys.exit(f"export: printable {pid} is hidden from members; unhide it or remove it from the approved list")
         doc = {k: v for k, v in doc.items() if k not in PRINTABLE_DROP}
         doc["download_count"] = 0
         printables.append(doc)

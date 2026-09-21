@@ -254,6 +254,7 @@ class PrintablePatch(BaseModel):
     def _norm_tier(cls, v): return normalize_tier(v)
     description: Optional[str] = None; content: Optional[str] = None
     pdf_file_id: Optional[str] = None; thumbnail_file_id: Optional[str] = None
+    is_hidden: Optional[bool] = None
 class JournalCreate(BaseModel):
     profile_id: str; recipe_id: Optional[str] = None; title: str; notes: str = ""
     photo_file_id: Optional[str] = None
@@ -792,7 +793,7 @@ async def delete_cost(cid: str, user=Depends(get_current_user)):
 # --- Printables ---
 @api.get("/printables")
 async def list_printables(tier: Optional[str] = None, user=Depends(get_current_user)):
-    q = {}
+    q = {} if user.get("role") == "admin" else {"is_hidden": {"$ne": True}}
     if tier: q["tier"] = _tier_query(tier)
     return [_out_tier(p) for p in await db.printables.find(q, {"_id": 0}).to_list(500)]
 
@@ -816,7 +817,7 @@ async def delete_printable(pid: str, admin=Depends(require_admin)):
 @api.get("/printables/{pid}/pdf")
 async def printable_pdf(pid: str, user=Depends(get_current_user)):
     p = await db.printables.find_one({"id": pid}, {"_id": 0})
-    if not p: raise HTTPException(404, "Not found")
+    if not p or (p.get("is_hidden") and user.get("role") != "admin"): raise HTTPException(404, "Not found")
 
     # Track download
     await db.printables.update_one({"id": pid}, {"$inc": {"download_count": 1}})
