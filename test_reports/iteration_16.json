@@ -21,7 +21,7 @@
   ],
   "updated_files": [],
   "success_rate": {"backend": "N/A (frontend-only test as requested)", "frontend": "100% (31/31 wording assertions + 43/43 unit tests)"},
-  "test_credentials": "admin@jeanamarie.club / JeanaAdmin2026! — used to reach /app dashboard, /app/library, /app/book/* (admin redirects to /admin by default, then navigated manually to /app routes).",
+  "test_credentials": "admin@jeanamarie.club / <redacted, see memory/test_credentials.md> — used to reach /app dashboard, /app/library, /app/book/* (admin redirects to /admin by default, then navigated manually to /app routes).",
   "seed_data_creation": "None — read-only verification.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

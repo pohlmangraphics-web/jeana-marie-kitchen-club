@@ -9,8 +9,7 @@ from pypdf import PdfReader
 
 BASE = os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/")
 
-DEMO = {"email": "demo@family.com", "password": "DemoFamily123!"}
-ADMIN = {"email": "admin@jeanamarie.club", "password": "JeanaAdmin2026!"}
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import DEMO, ADMIN  # noqa: E402
 
 LAUNCH = [
     ("Mini Rainbow Pizza Bites", "little"),

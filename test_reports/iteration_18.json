@@ -16,7 +16,7 @@
     "/app/backend/tests/test_launch_recipes_iter18.py (new)"
   ],
   "success_rate": {"backend": "100% (17/17 new + 21/21 existing recipe_card/tiers)", "frontend": "100% (all launch flows verified)"},
-  "test_credentials": "demo@family.com / DemoFamily123! and admin@jeanamarie.club / JeanaAdmin2026! (from /app/memory/test_credentials.md).",
+  "test_credentials": "demo@family.com / <redacted, see memory/test_credentials.md> and admin@jeanamarie.club / <redacted, see memory/test_credentials.md> (from /app/memory/test_credentials.md).",
   "seed_data_creation": "None — pure read-only verification.",
   "retest_needed": false,
   "main_agent_can_self_test": true,

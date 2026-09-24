@@ -42,6 +42,15 @@ def put_object(path: str, data: bytes, content_type: str) -> dict:
     return resp.json()
 
 
+def delete_object(path: str) -> bool:
+    """Best-effort delete; the object store may not expose DELETE (returns False, caller reports the orphan)."""
+    try:
+        resp = requests.delete(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": init_storage()}, timeout=30)
+    except requests.RequestException:
+        return False
+    return resp.status_code in (200, 202, 204)
+
+
 def get_object(path: str) -> Tuple[bytes, str]:
     key = init_storage()
     resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)

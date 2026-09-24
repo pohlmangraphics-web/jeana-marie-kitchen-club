@@ -3,6 +3,7 @@ import os
 import hashlib
 import io
 import pytest
+import sys as _s, os as _o; _s.path.insert(0, _o.path.dirname(__file__)); from creds import DEMO
 import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://recipe-journal-club.preview.emergentagent.com").rstrip("/")
@@ -14,7 +15,7 @@ SOURCE_PDF_URL = "https://customer-assets-m6fa6gv7.emergentagent.net/job_recipe-
 @pytest.fixture(scope="module")
 def family_token():
     r = requests.post(f"{BASE_URL}/api/auth/login",
-                      json={"email": "demo@family.com", "password": "DemoFamily123!"},
+                      json=DEMO,
                       timeout=30)
     assert r.status_code == 200, f"login failed: {r.status_code} {r.text}"
     return r.json()["token"]
