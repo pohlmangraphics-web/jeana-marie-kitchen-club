@@ -1,0 +1,24 @@
+{
+  "summary": "Read-only verification of the 5 approved launch recipes and related endpoints. Backend: created /app/backend/tests/test_launch_recipes_iter18.py — 17/17 PASS. Verified: GET /api/recipes (demo family) returns exactly 12 recipes; each of the 5 launch titles appears exactly once with correct tiers (little/junior/junior/young/teen), is_sample=false, non-empty safety_notes and time_text; Cookies & Burgers have non-empty tips; Pizza/Cookies/Burgers have yield_text. Tier filter contents match expectations (?tier=little→Pizza only; ?tier=junior→Cookies+Tacos only; ?tier=young→Grilled Cheese only; ?tier=teen→Smash Burgers only; ?tier=family→none of the 5). For all 5, GET /api/recipes/{id} → 200; GET /api/recipes/{id}/card → 200 application/pdf, X-Recipe-Card-Source=generated, pypdf ≥1 page, every page has extractable text, contains 'Kitchen Club', 'SAFETY & ADULT HELP', 'LEARNING ACTIVITY', matching tier label (LITTLE CHEFS (AGES 3-5) / JUNIOR COOKS (AGES 6-9) / YOUNG CHEFS (AGES 10-12) / TEEN KITCHEN (AGES 13-15+)) with whitespace-tolerant match, no 'Private Chef', no old age labels ('Ages 4–6', 'Ages 8–11', 'Ages 12–15'). Unauth GET /api/recipes/{id}/card → 401. 4 recipe photo_urls point to /api/files/{id}; each fetched WITHOUT auth → 200 image/jpeg >10KB. Non-photo file GET /api/files/7be730c8-6391-4bc2-a27c-a8b2249b8ad2 (printable PDF) without auth → 401. Featured recipe unchanged: id=502ef474-b8a0-4f5e-8188-d09af0fd0bce 'Rainbow Fruit Kabobs'. Admin printables count = 5, with is_hidden=true for 3. Also re-ran existing suites: tests/test_recipe_card.py + tests/test_tiers.py = 21/21 PASS. Frontend: logged in as demo@family.com via /auth, verified /app/book/little shows 'Mini Rainbow Pizza Bites' with image loaded (img.complete && naturalWidth=715), /app/book/young shows 'Dunkable Grilled Cheese & Tomato Soup', /app/book/teen shows 'Ultimate Smash Burgers', /app/book/junior shows both Cookies and Tacos. Tacos recipe page: hero image loaded (naturalWidth=660), [data-testid=recipe-safety] visible with exactly 5 <li> bullets, no [data-testid=recipe-tips]. Smash Burgers page: [data-testid=recipe-safety]=7 bullets, [data-testid=recipe-tips]=5 bullets. Clicking [data-testid=recipe-card-download] produced a real browser download with suggested_filename='Ultimate_Smash_Burgers_Recipe_Card.pdf' and payload starting with %PDF. No page errors, no error toasts. Never called /api/admin/email/*, never created/modified/deleted recipes/printables, never changed featured, never called Stripe.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_launch_recipes_iter18.py",
+    "/app/test_reports/pytest/iter18.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Recipe page correctly exposes recipe-safety, recipe-tips, and recipe-card-download data-testids — made verification robust.",
+    "download_file in server.py has a purpose=='recipe_photo' public branch that returns 200 without auth while other purposes still 401; regression test confirms the split works as intended.",
+    "Recipe card PDF is generated on the fly (X-Recipe-Card-Source: generated) and every page has extractable text; tier labels match the new AGES 3-5 / 6-9 / 10-12 / 13-15+ convention with no leaking of legacy 'Ages 4–6/8–11/12–15' labels — good cleanup."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_launch_recipes_iter18.py (new)"
+  ],
+  "success_rate": {"backend": "100% (17/17 new + 21/21 existing recipe_card/tiers)", "frontend": "100% (all launch flows verified)"},
+  "test_credentials": "demo@family.com / DemoFamily123! and admin@jeanamarie.club / JeanaAdmin2026! (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "None — pure read-only verification.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The 5 launch recipes are live and healthy in preview. photo_urls: Pizza Bites/Cookies/Tacos/Grilled Cheese use /api/files/{id} (public because purpose='recipe_photo'); Smash Burgers uses a remote Unsplash URL. Featured is still 502ef474-b8a0-4f5e-8188-d09af0fd0bce Rainbow Fruit Kabobs. GET /api/recipes/featured returns {recipe: {...}, fallback: false} — note the wrapper. Login response uses key 'token' (not 'access_token'). Regression file /app/backend/tests/test_launch_recipes_iter18.py can be reused as-is."
+}

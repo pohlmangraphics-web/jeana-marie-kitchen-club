@@ -118,6 +118,12 @@ React + TypeScript (JS in practice) + Tailwind + shadcn | FastAPI + JWT + bcrypt
 - **STALE: `backend/content_bundle.json` still contains tier "adult" for 2 recipes — regenerate after approval before any Live import.**
 - Printables: `is_hidden` flag (members' list/download exclude; admin sees "Hidden from members" + Eye toggle `admin-printable-toggle-hidden-{id}`). Hidden in Preview: My Blank Shopping List, Meal Costing Worksheet, Weekly Family Learning Guide (awaiting branded PDFs). Export tool approved printables now only Food Match and Color (6894d221, file ef2930a6) + Food Group Match (924178ba, file 7be730c8); hidden ids refused. Bundle still NOT regenerated.
 
+## Jun 2026 Update — Five launch recipes added (Preview, iteration_18 PASS)
+- Recipes 7→12. New: Mini Rainbow Pizza Bites (little, 0e9c…? see API), Chocolate Chip Cookie Shop Cookies (junior), Kid-Friendly Walking Tacos (junior), Dunkable Grilled Cheese & Tomato Soup (young), Ultimate Smash Burgers (teen). Member recipes, not samples.
+- New recipe fields: `safety_notes[]`, `tips[]`, `yield_text`, `time_text` (API + Recipe.jsx `recipe-safety`/`recipe-tips` + PDF sections/Makes chip).
+- Recipe photos: food-only crops stored via `/api/files/upload purpose=recipe_photo`; `GET /api/files/{id}` is now PUBLIC for purpose=recipe_photo only (needed for <img>/PDF/email); Admin upload no longer embeds a token in photo_url. Cookies uses joe-helping.webp (full frame; landscape crops show torso — owner decision pending). Burgers uses Unsplash photo-1568901346375 (Unsplash License; photographer attribution not verifiable via API).
+- Script: `backend/tools/preview_add_launch_recipes.py` (idempotent by title). Content bundle STILL stale (needs 5 recipes + 2 printables + tiers).
+
 ## Backlog (P1/P2)
 - **P1**: Resend email delivery — code ready, awaiting key + preview test, then Live values in Secrets UI
 - **P1**: Push-to-GitHub (requires paid subscription plan)
