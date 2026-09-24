@@ -144,7 +144,7 @@ function RecipesAdmin() {
   const uploadPhoto = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
     setBusy(true);
-    try { const r = await uploadFile(file, "recipe_photo"); setF({...f, photo_file_id: r.file_id, photo_url: `${API}/files/${r.file_id}?auth=${localStorage.getItem("jmk_token")}`}); toast.success("Photo uploaded"); }
+    try { const r = await uploadFile(file, "recipe_photo"); setF({...f, photo_file_id: r.file_id, photo_url: `${API}/files/${r.file_id}`}); toast.success("Photo uploaded"); }
     catch { toast.error("Photo upload failed"); }
     finally { setBusy(false); }
   };

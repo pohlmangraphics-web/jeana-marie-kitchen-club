@@ -137,6 +137,18 @@ export default function Recipe() {
           </div>
         </div>
 
+        {r.safety_notes?.length > 0 && (
+          <section data-testid="recipe-safety" className="mt-10 card-warm border-l-4 border-terracotta p-6">
+            <h2 className="serif text-2xl font-black text-espresso">Safety &amp; Adult Help</h2>
+            <ul className="mt-3 space-y-2 list-disc pl-5 text-muted2">{r.safety_notes.map((n, i) => <li key={i}>{n}</li>)}</ul>
+          </section>
+        )}
+        {r.tips?.length > 0 && (
+          <section data-testid="recipe-tips" className="mt-6 card-warm p-6">
+            <h2 className="serif text-2xl font-black text-espresso">Tips</h2>
+            <ul className="mt-3 space-y-2 list-disc pl-5 text-muted2">{r.tips.map((n, i) => <li key={i}>{n}</li>)}</ul>
+          </section>
+        )}
         {r.lesson_plan && (
           <div className="mt-10 rounded-2xl bg-sage/10 border-l-4 border-sage p-6">
             <p className="text-xs uppercase tracking-widest text-sage font-bold">Family Learning Guide</p>

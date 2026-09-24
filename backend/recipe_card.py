@@ -158,7 +158,11 @@ def build_recipe_card(recipe: dict, *, get_object=None, include_image: bool = Tr
     if recipe.get("prep_time") is not None: details.append(("Prep", f"{recipe['prep_time']} min"))
     if recipe.get("cook_time") is not None: details.append(("Cook", f"{recipe['cook_time']} min"))
     if recipe.get("prep_time") is not None and recipe.get("cook_time") is not None: details.append(("Total", f"{recipe['prep_time'] + recipe['cook_time']} min"))
-    if recipe.get("servings") is not None: details.append(("Serves", str(recipe["servings"])))
+    if recipe.get("yield_text"): details.append(("Makes", str(recipe["yield_text"])))
+    elif recipe.get("servings") is not None: details.append(("Serves", str(recipe["servings"])))
+    if recipe.get("time_text"):
+        pdf.ln(1); pdf.set_font("Sans", "", 9); pdf.set_text_color(*MUTED)
+        pdf.multi_cell(text_w, 5, str(recipe["time_text"]), align="L", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     if details:
         pdf.ln(3); y = pdf.get_y(); x = MARGIN; chip_w = min(34, text_w / len(details) - 2)
         for label, val in details:

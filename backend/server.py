@@ -238,6 +238,8 @@ class RecipePatch(BaseModel):
     photo_file_id: Optional[str] = None; photo_url: Optional[str] = None
     recipe_card_file_id: Optional[str] = None
     categories: Optional[List[str]] = None
+    safety_notes: Optional[List[str]] = None; tips: Optional[List[str]] = None
+    yield_text: Optional[str] = None; time_text: Optional[str] = None
     lesson_plan: Optional[str] = None; homeschool_topic: Optional[str] = None
     published_at: Optional[str] = None; is_sample: Optional[bool] = None
 class PrintableBody(BaseModel):
@@ -484,6 +486,9 @@ async def download_file(file_id: str, auth: Optional[str] = Query(None), authori
     rec = await db.files.find_one({"id": file_id, "is_deleted": False}, {"_id": 0})
     if not rec:
         raise HTTPException(404, "File not found")
+    if rec.get("purpose") == "recipe_photo":  # recipe photos are non-sensitive and embedded in cards/emails/PDFs
+        data, ctype = get_object(rec["storage_path"])
+        return Response(content=data, media_type=rec.get("content_type") or ctype, headers={"Cache-Control": "public, max-age=86400"})
     # Basic auth check: must be logged in
     token = None
     if authorization and authorization.startswith("Bearer "):
